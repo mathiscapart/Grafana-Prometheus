@@ -9,24 +9,26 @@ services:
     volumes:
       - ./prometheus:/etc/prometheus
       - prom_data:/prometheus
+
   blackbox:
     image: prom/blackbox-exporter:v0.26.0
     restart: unless-stopped
     depends_on:
       - prometheus
     command:
-      - '--config.file=/config/blackbox.yml'
+      - '--config.file=/etc/blackbox_exporter/config.yml'
     volumes:
-      - ./blackbox:/config/
+      - ./blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml
+
   alertmanager:
     image: prom/alertmanager:v0.28.1
     restart: unless-stopped
     depends_on:
       - prometheus
     command:
-      - '--config.file=/config/alertmanager.yml'
+      - '--config.file=/etc/alertmanager/config.yml'
     volumes:
-      - ./alertmanager:/config/
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/config.yml
 
   grafana:
     image: grafana/grafana:11.6.0
