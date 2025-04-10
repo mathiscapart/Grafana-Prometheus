@@ -12,4 +12,4 @@ route:
 receivers:
   - name: pagerduty
     pagerduty_configs:
-    - service_key: YOUR-INTEGRATION-KEY
+    - service_key: ***REMOVED***
