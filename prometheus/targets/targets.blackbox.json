@@ -1,0 +1,11 @@
+[
+  {
+    "labels": {
+      "job": "blackbox"
+    },
+    "targets": [
+      "http://dundermifflin.lan/",
+      "http://dundermifflin.lan/eshop"
+    ]
+  }
+]
