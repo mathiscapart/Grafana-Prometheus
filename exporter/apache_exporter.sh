@@ -13,7 +13,7 @@ cd /tmp || { echo "ERROR! No /tmp found.."; exit 1; }
 
 tar xfz /tmp/apache_exporter.tar.gz -C /tmp/apache_exporter || { echo "ERROR! Extracting the apache_exporter tar"; exit 1; }
 
-cp "/tmp/apache_exporter/apache_exporter" "$bin_dir"
+cp "/tmp/apache_exporter/apache_exporter-${version}.${arch}/apache_exporter" "$bin_dir"
 chmod +x "$bin_dir/apache_exporter"
 
 cat <<EOF > /etc/systemd/system/apache_exporter.service
