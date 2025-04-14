@@ -29,10 +29,10 @@ scrape_configs:
     metrics_path: /probe
     params:
       module: [ http_2xx ]
-    static_configs:
-      - targets:
-          - http://dundermifflin.lan/
-          - http://dundermifflin.lan/eshop
+    file_sd_configs:
+      - files:
+          - 'targets/targets.blackexporter.json'
+
     relabel_configs:
       - source_labels: [ __address__ ]
         target_label: __param_target
@@ -52,6 +52,13 @@ scrape_configs:
     file_sd_configs:
       - files:
           - 'targets/targets.keepalived.json'
+
+  - job_name: 'apache'
+    metrics_path: /metrics
+    file_sd_configs:
+      - files:
+          - 'targets/targets.apache.json'
+
 
 
 
