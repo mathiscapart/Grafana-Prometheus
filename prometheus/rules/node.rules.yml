@@ -1,0 +1,28 @@
+- name: node.rules
+  rules:
+  - alert: HighCPUUsage
+    expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 85
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Utilisation CPU élevée sur {{ $labels.instance }}"
+      description: "CPU utilisé à plus de 85%."
+
+  - alert: HighMemoryUsage
+    expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 90
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Utilisation mémoire élevée sur {{ $labels.instance }}"
+      description: "RAM utilisée à plus de 90%."
+
+  - alert: LowDiskSpace
+    expr: (node_filesystem_size_bytes{fstype=~"ext4|xfs"} - node_filesystem_free_bytes{fstype=~"ext4|xfs"}) / node_filesystem_size_bytes{fstype=~"ext4|xfs"} * 100 > 90
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Espace disque faible sur {{ $labels.instance }} ({{ $labels.mountpoint }})"
+      description: "Plus de 90% de l'espace disque utilisé."

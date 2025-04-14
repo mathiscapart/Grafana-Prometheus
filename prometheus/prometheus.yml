@@ -59,6 +59,12 @@ scrape_configs:
       - files:
           - 'targets/targets.apache.json'
 
+  - job_name: 'nginx'
+    metrics_path: /metrics
+    file_sd_configs:
+      - files:
+          - 'targets/targets.nginx.json'
+
 
 
 
