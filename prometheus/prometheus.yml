@@ -47,4 +47,11 @@ scrape_configs:
       - files:
           - 'targets/targets.mysql.json'
 
+  - job_name: 'keepalived'
+    metrics_path: /metrics
+    file_sd_configs:
+      - files:
+          - 'targets/targets.keepalived.json'
+
+
 
