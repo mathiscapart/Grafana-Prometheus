@@ -1,10 +1,11 @@
-- name: blackbox.rules
-  rules:
-  - alert: WebsiteDown
-    expr: probe_success == 0
-    for: 30s
-    labels:
-      severity: critical
-    annotations:
-      summary: "Site inaccessible ({{ $labels.instance }})"
-      description: "Le site {{ $labels.instance }} ne répond pas au check blackbox."
+groups:
+  - name: blackbox.rules
+    rules:
+      - alert: WebsiteDown
+        expr: probe_success == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Site inaccessible ({{ $labels.instance }})"
+          description: "Le site {{ $labels.instance }} ne répond pas au check blackbox."

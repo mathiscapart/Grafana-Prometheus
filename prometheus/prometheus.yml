@@ -6,7 +6,7 @@ alerting:
   alertmanagers:
     - static_configs:
         - targets:
-           - alertmanager:9093
+            - alertmanager:9093
 
 rule_files:
   - rules/*.rules.yml
@@ -16,7 +16,8 @@ scrape_configs:
     metrics_path: /metrics
     scheme: http
     static_configs:
-      - targets: ["localhost:9090"]
+      - targets:
+          - localhost:9090
 
   - job_name: 'node'
     metrics_path: /metrics
@@ -25,21 +26,36 @@ scrape_configs:
       - files:
           - 'targets/targets.node.json'
 
-  - job_name: 'blackbox'
+  - job_name: 'blackbox_wordpress'
     metrics_path: /probe
     params:
-      module: [ http_2xx ]
-    file_sd_configs:
-      - files:
-          - 'targets/targets.blackexporter.json'
-
+      module: [ http_vhost ]
+    static_configs:
+      - targets:
+          - http://192.168.70.200/
     relabel_configs:
       - source_labels: [ __address__ ]
         target_label: __param_target
       - source_labels: [ __param_target ]
         target_label: instance
       - target_label: __address__
-        replacement: 127.0.0.1:9115
+        replacement: blackbox:9115
+
+  - job_name: 'blackbox_prestashop'
+    metrics_path: /probe
+    params:
+      module: [ http_vhost ]
+    static_configs:
+      - targets:
+          - http://192.168.70.200/eshop
+    relabel_configs:
+      - source_labels: [ __address__ ]
+        target_label: __param_target
+      - source_labels: [ __param_target ]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115
+
 
   - job_name: 'mysql'
     metrics_path: /metrics
@@ -64,7 +80,3 @@ scrape_configs:
     file_sd_configs:
       - files:
           - 'targets/targets.nginx.json'
-
-
-
-
