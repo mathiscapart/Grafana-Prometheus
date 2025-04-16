@@ -1,4 +1,4 @@
-# 3DVP 
+# 3MIN
 
 Nous devons monitorer l'infrastructure Dundermifflin, pour ce faire nous utilisons des solutions open source, notamment la suite Grafana + Prometheus.
 ## 📦 Services utilisés
