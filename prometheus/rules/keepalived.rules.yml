@@ -1,27 +1,29 @@
 groups:
-- name: keepalived.rules
-  rules:
-  - alert: KeepalivedDown
-    expr: keepalived_up == 0
-    for: 30s
-    labels:
-      severity: critical
-    annotations:
-      summary: "Keepalived est down sur {{ $labels.instance }}"
-      description: "Le service keepalived ne renvoie plus de métriques sur {{ $labels.instance }}."
-  - alert: KeepalivedBackupBecameMaster
-    expr: increase(keepalived_become_master_total[1m]) > 0
-    for: 0s
-    labels:
-      severity: warning
-    annotations:
-      summary: "Un noeud BACKUP est passé MASTER sur {{ $labels.instance }}"
-      description: "Basculement détecté : un noeud a pris le rôle MASTER sur l'interface {{ $labels.intf }} (VRID: {{ $labels.vrid }})."
-  - alert: KeepalivedReleasedMaster
-    expr: increase(keepalived_release_master_total[1m]) > 0
-    for: 0s
-    labels:
-      severity: warning
-    annotations:
-      summary: "Rôle MASTER relâché sur {{ $labels.instance }}"
-      description: "Keepalived a perdu le rôle MASTER (VRID: {{ $labels.vrid }}, interface: {{ $labels.intf }})."
+  - name: keepalived.rules
+    rules:
+      - alert: KeepalivedDown
+        expr: keepalived_up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Keepalived est down sur {{ $labels.instance }}"
+          description: "Le service keepalived ne renvoie plus de métriques sur {{ $labels.instance }}."
+
+      - alert: KeepalivedBackupBecameMaster
+        expr: increase(keepalived_become_master_total[1m]) > 0
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Un noeud BACKUP est passé MASTER sur {{ $labels.instance }}"
+          description: "Basculement détecté : un noeud a pris le rôle MASTER sur l'interface {{ $labels.intf }} (VRID: {{ $labels.vrid }})."
+
+      - alert: KeepalivedReleasedMaster
+        expr: increase(keepalived_release_master_total[1m]) > 0
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Rôle MASTER relâché sur {{ $labels.instance }}"
+          description: "Keepalived a perdu le rôle MASTER (VRID: {{ $labels.vrid }}, interface: {{ $labels.intf }})."

@@ -1,10 +1,11 @@
-- name: prometheus.rules
-  rules:
-  - alert: TargetDown
-    expr: up == 0
-    for: 1m
-    labels:
-      severity: critical
-    annotations:
-      summary: "Target Prometheus down: {{ $labels.job }} ({{ $labels.instance }})"
-      description: "Le job {{ $labels.job }} à l'IP {{ $labels.instance }} ne répond plus."
+groups:
+  - name: prometheus.rules
+    rules:
+      - alert: TargetDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Target Prometheus down: {{ $labels.job }} ({{ $labels.instance }})"
+          description: "Le job {{ $labels.job }} à l'IP {{ $labels.instance }} ne répond plus."
