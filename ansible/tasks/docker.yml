@@ -1,0 +1,38 @@
+- name: "Install docker"
+  hosts: all
+  become_user: true
+  tasks:
+    - apt:
+        name:
+            - ca-certificates
+            - curl
+            - apt-transport-https
+            - ca-certificates
+            - curl
+            - software-properties-common
+            - python3-pip
+            - python3-setuptools
+            - virtualenv
+        state: latest
+        update_cache: true
+    - apt_key:
+        url: https://download.docker.com/linux/debian/gpg
+        state: present
+    - apt_repository:
+        repo: "deb https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+        update_cache: true
+        state: present
+    - apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: latest
+        update_cache: true
+    - service:
+        name: docker
+        state: started
+        enabled: yes
+    - package:
+        name:
+          - docker-compose-plugin

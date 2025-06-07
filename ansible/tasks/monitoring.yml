@@ -1,0 +1,52 @@
+- name: "Init monitoring"
+  hosts: monitoring
+  become_user: true
+  vars:
+    node: 192.168.70.146
+    folder_prometheus_status:
+    folder_targets_status:
+  tasks:
+    - stat:
+        path: /opt/prometheus/
+      register: folder_prometheus_status
+    - file:
+        path:  /opt/prometheus/
+        state: directory
+      when: not folder_prometheus_status.stat.exists
+    - stat:
+        path: /opt/prometheus/targets
+      register: folder_targets_status
+    - file:
+        path: /opt/prometheus/targets
+        state: directory
+      when: not folder_targets_status.stat.exists
+    - debug:
+        msg: "{{ groups }}"
+    - debug:
+        msg: "{{ item }}"
+      loop: "{{ groups | difference(['all', 'ungrouped']) }}"
+    - template:
+        src: prometheus.conf.j2
+        dest: /opt/prometheus/prometheus.yml
+        owner: root
+        group: root
+        mode: '0644'
+    - template:
+        src: targets.conf.j2
+        dest: /opt/prometheus/targets/targets."{{ item }}".json
+        owner: root
+        group: root
+        mode: '0644'
+      loop: "{{ groups | difference(['all', 'ungrouped']) }}"
+    
+    - copy:
+        src: ../../compose.yml
+        dest: /opt/prometheus/
+        owner: root
+        group: root
+        mode: '0644'
+    - community.docker.docker_compose_v2:
+        project_src: /opt/prometheus
+        state: restarted
+      register: output
+
