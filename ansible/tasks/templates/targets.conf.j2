@@ -1,0 +1,10 @@
+[
+  {
+    "labels": {
+      "job": "{{ item }}"
+    },
+    "targets": [
+        {% for i in groups['{{ item }}'] %}"{{ i }}:groups['{{ item }}']['exporter_port']"{% if not loop.last %},{% endif %}{% endfor %}
+    ]
+  }
+]

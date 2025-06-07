@@ -1,0 +1,14 @@
+all:
+  children:
+    monitoring:
+      hosts:
+        192.168.70.145:
+    node_exporter:
+      vars:
+        exporter_port: 9100
+      hosts:
+        192.168.70.146:
+
+  vars:
+    ansible_user: root
+    ansible_ssh_private_key_file: /home/mathis/.ssh/id_ed25519
