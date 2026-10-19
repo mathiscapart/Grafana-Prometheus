@@ -74,8 +74,10 @@ docker/tools/Dockerfile         golang:<GO_VERSION>-alpine : go install envsubst
    (`CGO_ENABLED=0`) et ne garde qu'eux (image `scratch`).
 2. Les Dockerfiles Prometheus et Alertmanager copient ces binaires dans l'image officielle
    (`COPY --from=tools`). Compose fournit l'image builder comme contexte de build
-   nommé (`additional_contexts: tools: service:tools`) ; le service `tools` est
-   dans le profil `build`, il est construit mais jamais lancé.
+   nommé (`additional_contexts: tools: service:tools`) ; le service `tools` a
+   `scale: 0` : il est construit mais aucun conteneur n'est créé. Testé avec Docker
+   Compose 2.38 et 5.6 (un service placé dans un profil inactif n'est pas utilisable
+   comme contexte de build avec Compose 2.x).
 3. À **chaque démarrage** du conteneur, l'`ENTRYPOINT` rend les `.tmpl` en `.yml` avec les
    variables d'environnement puis lance le service (Prometheus hache d'abord son mot de passe
    basic auth).

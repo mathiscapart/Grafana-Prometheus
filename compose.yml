@@ -7,7 +7,7 @@ services:
         GO_VERSION: ${GO_VERSION:?à définir dans .env}
         ENVSUBST_VERSION: ${ENVSUBST_VERSION:?à définir dans .env}
         BCRYPT_TOOL_VERSION: ${BCRYPT_TOOL_VERSION:?à définir dans .env}
-    profiles: [build]
+    scale: 0
 
   prometheus:
     build:
