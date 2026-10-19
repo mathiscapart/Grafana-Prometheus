@@ -15,44 +15,36 @@ Nous devons monitorer l'infrastructure Dundermifflin, pour ce faire nous utiliso
 
 # ✨ Prérequis
 
-- Initialiser les targets avec les adresses IP de votre infrastructure selon l'exporter installé.
-
-  - Exemple : ``192.168.1.10`` = ``apache_exporter`` ➜ mettre l'IP dans le fichier ``targets.apache.json``
-
-- Rentrer dans le ``.env`` l'utilisateur et le mot de passe de Grafana.
-
-- Pour déployer vos `` exporters`` sur vos serveurs, vous pouvez utiliser les commandes ci-dessous :
+- Copier ``.env.example`` en ``.env`` et remplacer chaque ``XXX`` (versions, webhook Discord, identifiants).
+- Renseigner les targets de chaque exporter dans ``prometheus/targets/<job>.json`` (modèle : ``node.json.example``).
+- Installer les exporters sur vos serveurs avec les scripts du dossier ``exporter/`` : ils
+  les protègent par basic auth, avec les identifiants du ``.env``
+  (cf. [doc/securisation-exporters.md](doc/securisation-exporters.md)) :
 ````bash
-# Exemple (ajustez selon votre script)
-cd exporter
-./install_node_exporter.sh
-./install_apache_exporter.sh
-# etc.
+sudo NODE_BASIC_AUTH_USERNAME=prometheus VERSION=X.Y.Z ./exporter/node_exporter.sh   # mot de passe demandé
 ````
 
+La documentation détaillée est dans le dossier [`doc/`](doc) :
 
-⚠️ N'oubliez pas d'initialiser les variables dans les scripts, qui se trouvent dans le dossier exporter
-
-- Pour AlertManager, configurez-le en suivant la documentation PagerDuty : https://www.pagerduty.com/docs/guides/prometheus-integration-guide/
+- [Configuration (.env, templates, targets, rules)](doc/configuration.md)
+- [Alertmanager → Discord](doc/alertmanager-discord.md)
+- [Grafana (configuration, import de dashboards)](doc/grafana.md)
+- [Installation et sécurisation des exporters](doc/securisation-exporters.md)
+- [Déploiement avec Ansible](doc/ansible.md)
+- [CI (lint, build, vérifications)](doc/ci.md)
 
 ## 🧱 Lancé le projet
 
 L'ensemble des services est déployé via Docker Compose, lancé cette commande à la racine du projet  : 
 ```bash
-docker compose up -d 
+docker compose up -d --build
 ``` 
-Les métriques sont accessibles via Prometheus, et visualisées avec Grafana sur votre pc en allant sur `localhost:3000` pour Grafana et `localhost:9090` pour Prometheus.
+Grafana est accessible sur le port `3000` (compte admin du `.env`) et Prometheus sur le port `9090` (basic auth `PROMETHEUS_BASIC_AUTH_*` du `.env`). Alertmanager et Blackbox ne sont pas exposés (cf. [doc/configuration.md](doc/configuration.md#accès-aux-services)).
     
 ## Schéma d'infrastructure avec monitoring
 ![img.png](img/schema.drawio.png)
 
 ## 🔄 Mise à jour
 
-Si vous souhaitez ajouter des targets : 
-````bash
-docker compose down
-````
-Ajouter vos targets dans les JSON puis :
-````bash
-docker compose up -d
-````
+Ajouter ou modifier des targets dans ``prometheus/targets/*.json`` : Prometheus les recharge automatiquement.
+Pour le reste (``.env``, templates, rules), voir [doc/configuration.md](doc/configuration.md#appliquer-une-modification).

@@ -1,0 +1,59 @@
+# Santé de la stack de monitoring elle-même (Prometheus et Alertmanager).
+groups:
+  - name: prometheus-self.rules
+    rules:
+      - alert: PrometheusConfigReloadFailed
+        expr: prometheus_config_last_reload_successful == 0
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Échec du rechargement de la configuration Prometheus"
+          description: "Prometheus tourne avec l'ancienne configuration : vérifier prometheus.yml.tmpl (promtool check config)."
+
+      - alert: PrometheusRuleEvaluationFailures
+        expr: increase(prometheus_rule_evaluation_failures_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Erreurs d'évaluation des rules ({{ $labels.rule_group }})"
+          description: "{{ $value | printf \"%.0f\" }} échecs en 5 min : des alertes peuvent ne pas se déclencher."
+
+      - alert: PrometheusAlertmanagerNotConnected
+        expr: prometheus_notifications_alertmanagers_discovered < 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prometheus n'est connecté à aucun Alertmanager"
+          description: "Les alertes ne peuvent plus être envoyées."
+
+      - alert: PrometheusNotificationsFailing
+        expr: increase(prometheus_notifications_errors_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prometheus n'arrive pas à envoyer les alertes à Alertmanager"
+          description: "{{ $value | printf \"%.0f\" }} erreurs d'envoi vers {{ $labels.alertmanager }} en 5 min."
+
+  - name: alertmanager.rules
+    rules:
+      - alert: AlertmanagerConfigReloadFailed
+        expr: alertmanager_config_last_reload_successful == 0
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Échec du rechargement de la configuration Alertmanager"
+          description: "Alertmanager tourne avec l'ancienne configuration : vérifier alertmanager.yml.tmpl (amtool check-config)."
+
+      - alert: AlertmanagerNotificationsFailing
+        expr: increase(alertmanager_notifications_failed_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Alertmanager n'arrive pas à notifier via {{ $labels.integration }}"
+          description: "{{ $value | printf \"%.0f\" }} notifications en échec en 5 min : vérifier le webhook (DISCORD_WEBHOOK_URL)."

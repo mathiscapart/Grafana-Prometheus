@@ -1,0 +1,19 @@
+---
+- name: Créer le répertoire de node_exporter
+  ansible.builtin.file:
+    path: "{{ node_exporter_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Générer le compose node_exporter
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ node_exporter_dir }}/compose.yml"
+    mode: "0644"
+
+# Un changement du compose (version…) est détecté par compose, qui recrée le conteneur.
+- name: Démarrer node_exporter
+  community.docker.docker_compose_v2:
+    project_src: "{{ node_exporter_dir }}"
+    wait: true
+    state: present

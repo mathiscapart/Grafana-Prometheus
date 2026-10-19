@@ -1,0 +1,98 @@
+# Template rendu par envsubst au démarrage du conteneur : ${VAR} est remplacé
+# par la variable du .env (à déclarer aussi dans `environment:` du compose).
+# Pour un `$` littéral, écrire `$$`.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+rule_files:
+  - rules/*.rules.yml
+
+# Les cibles sont lues dans targets/<job>.json (cf. targets/*.json.example).
+# Un fichier absent = job sans cible, pas d'erreur.
+scrape_configs:
+  - job_name: "prometheus"
+    basic_auth:
+      username: '${PROMETHEUS_BASIC_AUTH_USERNAME}'
+      password: '${PROMETHEUS_BASIC_AUTH_PASSWORD}'
+    static_configs:
+      - targets:
+          - localhost:9090
+
+  # Supervision de la stack elle-même
+  - job_name: "alertmanager"
+    static_configs:
+      - targets:
+          - alertmanager:9093
+
+  - job_name: "blackbox_exporter"
+    static_configs:
+      - targets:
+          - blackbox:9115
+
+  - job_name: "grafana"
+    static_configs:
+      - targets:
+          - grafana:3000
+
+  - job_name: "node"
+    basic_auth:
+      username: '${NODE_BASIC_AUTH_USERNAME}'
+      password: '${NODE_BASIC_AUTH_PASSWORD}'
+    file_sd_configs:
+      - files:
+          - targets/node.json
+
+  - job_name: "mysql"
+    basic_auth:
+      username: '${MYSQL_BASIC_AUTH_USERNAME}'
+      password: '${MYSQL_BASIC_AUTH_PASSWORD}'
+    file_sd_configs:
+      - files:
+          - targets/mysql.json
+
+  # keepalived-exporter ne gère pas l'authentification (cf. doc/securisation-exporters.md)
+  - job_name: "keepalived"
+    file_sd_configs:
+      - files:
+          - targets/keepalived.json
+
+  - job_name: "nginx"
+    basic_auth:
+      username: '${NGINX_BASIC_AUTH_USERNAME}'
+      password: '${NGINX_BASIC_AUTH_PASSWORD}'
+    file_sd_configs:
+      - files:
+          - targets/nginx.json
+
+  - job_name: "apache"
+    basic_auth:
+      username: '${APACHE_BASIC_AUTH_USERNAME}'
+      password: '${APACHE_BASIC_AUTH_PASSWORD}'
+    file_sd_configs:
+      - files:
+          - targets/apache.json
+
+  # Les cibles sont des URL/hôtes à sonder, le scrape passe par le blackbox exporter.
+  # Module par défaut : http_2xx ; surchargeable par groupe de cibles avec le
+  # label "__param_module" (cf. targets/blackbox.json.example et blackbox/blackbox.yml).
+  - job_name: "blackbox"
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    file_sd_configs:
+      - files:
+          - targets/blackbox.json
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115

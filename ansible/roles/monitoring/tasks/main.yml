@@ -1,0 +1,58 @@
+---
+- name: Créer le répertoire des targets
+  ansible.builtin.file:
+    path: "{{ monitoring_dir }}/prometheus/targets"
+    state: directory
+    mode: "0755"
+
+# Templates, rules et configs sont lus au démarrage des conteneurs : un changement
+# impose un redémarrage (handler). Un changement du .env est détecté par compose.
+- name: Copier les fichiers de la stack
+  ansible.builtin.copy:
+    src: "{{ monitoring_repo_dir }}/{{ item }}"
+    dest: "{{ monitoring_dir }}/{{ item | dirname }}/"
+    mode: preserve
+  loop: "{{ monitoring_files }}"
+  notify: Redémarrer la stack de monitoring
+
+# copy n'efface rien : une rule ou un dashboard retiré du repo resterait chargé sur le serveur
+- name: Lister les fichiers déployés dans les dossiers de la stack
+  ansible.builtin.find:
+    paths: "{{ monitoring_dir }}/{{ item }}"
+    recurse: true
+  loop: "{{ monitoring_files }}"
+  when: (monitoring_repo_dir ~ '/' ~ item) is directory
+  register: monitoring_deployed_files
+
+- name: Supprimer les fichiers retirés du repo
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ monitoring_deployed_files.results | selectattr('files', 'defined') | map(attribute='files') | flatten }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when: not (monitoring_repo_dir ~ (item.path | replace(monitoring_dir, '', 1))) is exists
+  notify: Redémarrer la stack de monitoring
+
+- name: Copier le .env
+  ansible.builtin.copy:
+    src: "{{ monitoring_env_file }}"
+    dest: "{{ monitoring_dir }}/.env"
+    mode: "0600"
+
+# Relues à chaud par Prometheus : pas de redémarrage
+- name: Générer les targets Prometheus
+  ansible.builtin.template:
+    src: targets.json.j2
+    dest: "{{ monitoring_dir }}/prometheus/targets/{{ item.key }}.json"
+    mode: "0644"
+  loop: "{{ monitoring_prometheus_targets | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Construire et démarrer la stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_dir }}"
+    build: always
+    wait: true
+    state: present

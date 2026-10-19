@@ -1,0 +1,6 @@
+---
+- name: Déployer la stack de monitoring
+  hosts: monitoring
+  become: true
+  roles:
+    - monitoring

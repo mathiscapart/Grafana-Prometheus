@@ -1,38 +1,21 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Installe apache_exporter (service systemd, basic auth via web.yml).
+# Apache doit exposer mod_status sur APACHE_SCRAPE_URI.
+# Usage : sudo VERSION=x.y.z ./apache_exporter.sh   — cf. doc/securisation-exporters.md
+set -euo pipefail
+# shellcheck source=common.sh
+source "$(dirname "$0")/common.sh"
 
-version="${VERSION:-1.0.10}"
-arch="${ARCH:-linux-amd64}"
-bin_dir="${BIN_DIR:-/usr/local/bin}"
+VERSION="${VERSION:?VERSION requise, ex. VERSION=X.Y.Z (github.com/Lusitaniae/apache_exporter/releases)}"
+PORT="${PORT:-9117}"
+APACHE_SCRAPE_URI="${APACHE_SCRAPE_URI:-http://localhost/server-status?auto}"
+WEB_CONFIG="$EXPORTERS_CONFIG_DIR/apache_exporter.web.yml"
 
-wget "https://github.com/Lusitaniae/apache_exporter/releases/download/v${version}/apache_exporter-${version}.${arch}.tar.gz" \
-    -O /tmp/apache_exporter.tar.gz
-
-mkdir -p /tmp/apache_exporter
-
-cd /tmp || { echo "ERROR! No /tmp found.."; exit 1; }
-
-tar xfz /tmp/apache_exporter.tar.gz -C /tmp/apache_exporter || { echo "ERROR! Extracting the apache_exporter tar"; exit 1; }
-
-cp "/tmp/apache_exporter/apache_exporter-${version}.${arch}/apache_exporter" "$bin_dir"
-chmod +x "$bin_dir/apache_exporter"
-
-cat <<EOF > /etc/systemd/system/apache_exporter.service
-[Unit]
-Description=Nginx Exporter for Prometheus
-After=network.target
-
-[Service]
-User=root
-Group=sudo
-Type=simple
-ExecStart=/usr/local/bin/apache_exporter
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl enable apache_exporter.service
-systemctl start apache_exporter.service
-
-echo "SUCCESS! Installation succeeded!"
+require_root
+install_prerequisites
+create_user
+write_web_config "$WEB_CONFIG" APACHE
+install_binary "https://github.com/Lusitaniae/apache_exporter/releases/download/v$VERSION/apache_exporter-$VERSION.linux-$(detect_arch).tar.gz" apache_exporter
+install_service apache_exporter "$EXPORTERS_USER" /usr/local/bin/apache_exporter \
+    --scrape_uri="$APACHE_SCRAPE_URI" --web.listen-address=":$PORT" --web.config.file="$WEB_CONFIG"
+verify_service apache_exporter "$PORT" 401

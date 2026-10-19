@@ -1,0 +1,6 @@
+# Template rendu par envsubst au démarrage du conteneur (cf. doc/configuration.md) :
+# protège l'interface et l'API de Prometheus par basic auth.
+# PROMETHEUS_BASIC_AUTH_PASSWORD_HASH est calculé au démarrage à partir de PROMETHEUS_BASIC_AUTH_PASSWORD.
+# Options possibles (TLS…) : https://prometheus.io/docs/prometheus/latest/configuration/https/
+basic_auth_users:
+  '${PROMETHEUS_BASIC_AUTH_USERNAME}': '${PROMETHEUS_BASIC_AUTH_PASSWORD_HASH}'

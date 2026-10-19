@@ -1,0 +1,30 @@
+---
+- name: Installer les prérequis
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - python3-debian
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Ajouter le dépôt Docker
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: deb
+    uris: "{{ docker_apt_url }}"
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components: stable
+    signed_by: "{{ docker_apt_url }}/gpg"
+
+- name: Installer Docker et le plugin Compose
+  ansible.builtin.apt:
+    name: "{{ docker_packages }}"
+    state: present
+    update_cache: true
+
+- name: Démarrer Docker
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true

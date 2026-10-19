@@ -1,0 +1,9 @@
+---
+- name: Installer Docker
+  ansible.builtin.import_playbook: docker.yml
+
+- name: Déployer la stack de monitoring
+  ansible.builtin.import_playbook: monitoring.yml
+
+- name: Déployer node_exporter
+  ansible.builtin.import_playbook: node_exporter.yml

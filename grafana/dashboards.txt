@@ -1,0 +1,10 @@
+# Dashboards grafana.com recommandés, à importer à la main :
+# Dashboards → New → Import → saisir l'ID → Load → datasource « Prometheus » (cf. doc/grafana.md)
+#
+# ID     Dossier          Dashboard
+1860     Infrastructure   Node Exporter Full
+14057    Services         MySQL Exporter Quickstart and Dashboard
+12708    Services         NGINX exporter (officiel nginx-prometheus-exporter)
+13659    Monitoring       Blackbox Exporter (HTTP prober)
+3662     Monitoring       Prometheus 2.0 Overview
+9578     Monitoring       Alertmanager

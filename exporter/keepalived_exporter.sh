@@ -1,40 +1,20 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Installe keepalived-exporter (mehdy) en service systemd.
+# ⚠️ Cet exporter ne gère pas --web.config.file : pas de basic auth possible,
+# ses métriques restent accessibles sans authentification (cf. doc/securisation-exporters.md).
+# Il tourne en root : il signale keepalived (via son PID) pour obtenir ses statistiques.
+# Usage : sudo VERSION=x.y.z ./keepalived_exporter.sh
+set -euo pipefail
+# shellcheck source=common.sh
+source "$(dirname "$0")/common.sh"
 
-version="${VERSION:-1.5.0}"
-arch="${ARCH:-linux_amd64}"
-bin_dir="${BIN_DIR:-/usr/local/bin}"
+VERSION="${VERSION:?VERSION requise, ex. VERSION=X.Y.Z (github.com/mehdy/keepalived-exporter/releases)}"
+PORT="${PORT:-9165}"
+KEEPALIVED_PID_PATH="${KEEPALIVED_PID_PATH:-/var/run/keepalived.pid}"
 
-wget "https://github.com/mehdy/keepalived-exporter/releases/download/v${version}/keepalived-exporter_${version}_${arch}.tar.gz" \
-    -O /tmp/keepalived_exporter.tar.gz
-
-mkdir -p /tmp/keepalived_exporter
-
-cd /tmp || { echo "ERROR! No /tmp found.."; exit 1; }
-
-tar xfz /tmp/keepalived-exporter.tar.gz -C /tmp/keepalived_exporter || { echo "ERROR! Extracting the keepalived_exporter tar"; exit 1; }
-
-cp "/tmp/keepalived_exporter/keepalived-exporter" "$bin_dir"
-chmod +x "$bin_dir/keepalived-exporter"
-
-cat <<EOF > /etc/systemd/system/keepalived_exporter.service
-[Unit]
-Description=Keepalived Exporter for Prometheus
-After=network.target
-
-[Service]
-User=root
-Group=sudo
-Type=simple
-ExecStart=/usr/local/bin/keepalived-exporter \
-  --ka.pid-path=/var/run/keepalived.pid \
-  --web.listen-address=":9165"
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl enable keepalived_exporter.service
-systemctl start keepalived_exporter.service
-
-echo "SUCCESS! Installation succeeded!"
+require_root
+install_prerequisites
+install_binary "https://github.com/mehdy/keepalived-exporter/releases/download/v$VERSION/keepalived-exporter_${VERSION}_linux_$(detect_arch).tar.gz" keepalived-exporter
+install_service keepalived_exporter root /usr/local/bin/keepalived-exporter \
+    --ka.pid-path="$KEEPALIVED_PID_PATH" --web.listen-address=":$PORT"
+verify_service keepalived_exporter "$PORT" 200

@@ -1,0 +1,18 @@
+---
+# Répertoire de la stack sur le serveur
+monitoring_dir: /opt/monitoring
+# Racine du repo sur la machine de contrôle, et .env copié sur le serveur
+monitoring_repo_dir: "{{ role_path }}/../../.."
+monitoring_env_file: "{{ monitoring_repo_dir }}/.env"
+# Fichiers et dossiers du repo déployés sur le serveur
+monitoring_files:
+  - compose.yml
+  - docker
+  - prometheus/prometheus.yml.tmpl
+  - prometheus/web.yml.tmpl
+  - prometheus/rules
+  - alertmanager
+  - blackbox
+  - grafana
+# { <job>: [<cible>, ...] } → prometheus/targets/<job>.json
+monitoring_prometheus_targets: {}

@@ -9,3 +9,21 @@ groups:
         annotations:
           summary: "Site inaccessible ({{ $labels.instance }})"
           description: "Le site {{ $labels.instance }} ne répond pas au check blackbox."
+
+      - alert: SslCertificateExpiringSoon
+        expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 14
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Certificat TLS bientôt expiré ({{ $labels.instance }})"
+          description: "Le certificat de {{ $labels.instance }} expire dans {{ $value | printf \"%.0f\" }} jours."
+
+      - alert: SslCertificateExpiringCritical
+        expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 3
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Certificat TLS expiré ou sur le point de l'être ({{ $labels.instance }})"
+          description: "Le certificat de {{ $labels.instance }} expire dans {{ $value | printf \"%.0f\" }} jours."

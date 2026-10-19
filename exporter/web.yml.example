@@ -1,0 +1,14 @@
+# Configuration web des exporters (exporter-toolkit) — cf. doc/securisation-exporters.md
+# Les scripts d'installation génèrent ce fichier dans /etc/prometheus-exporters/<exporter>.web.yml ;
+# ce modèle sert pour une installation manuelle (ex. node_exporter en conteneur).
+# web.yml n'est pas versionné (.gitignore).
+
+# <EXPORTER>_BASIC_AUTH_USERNAME: <hash bcrypt de <EXPORTER>_BASIC_AUTH_PASSWORD> (valeurs du .env)
+# Générer le hash : htpasswd -nBC 10 "" | tr -d ':\n'
+basic_auth_users:
+  prometheus: 'XXX'
+
+# TLS (optionnel) — si activé, passer le job en `scheme: https` dans prometheus.yml.tmpl
+# tls_server_config:
+#   cert_file: /etc/prometheus-exporters/tls.crt
+#   key_file: /etc/prometheus-exporters/tls.key

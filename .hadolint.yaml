@@ -1,0 +1,5 @@
+ignored:
+  # « tools » est un contexte de build nommé fourni par compose (additional_contexts),
+  # et l'image builder est un scratch qui ne contient que les binaires envsubst et bcrypt-tool
+  - DL3022
+  - DL3067

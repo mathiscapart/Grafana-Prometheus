@@ -1,0 +1,16 @@
+# Template rendu par envsubst au démarrage du conteneur (cf. doc/alertmanager-discord.md).
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: discord
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h
+
+receivers:
+  - name: discord
+    discord_configs:
+      - webhook_url: '${DISCORD_WEBHOOK_URL}'
+        send_resolved: true

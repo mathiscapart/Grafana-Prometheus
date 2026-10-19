@@ -27,3 +27,41 @@ groups:
         annotations:
           summary: "Espace disque faible sur {{ $labels.instance }} ({{ $labels.mountpoint }})"
           description: "Plus de 90% de l'espace disque utilisé."
+
+      - alert: DiskWillFillIn24Hours
+        expr: |
+          predict_linear(node_filesystem_avail_bytes{fstype=~"ext4|xfs"}[6h], 24 * 3600) < 0
+          and on (instance, device, mountpoint) node_filesystem_readonly{fstype=~"ext4|xfs"} == 0
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disque bientôt plein sur {{ $labels.instance }} ({{ $labels.mountpoint }})"
+          description: "Au rythme des 6 dernières heures, le système de fichiers sera plein dans moins de 24 h."
+
+      - alert: OomKillDetected
+        expr: increase(node_vmstat_oom_kill[5m]) > 0
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Processus tué par manque de mémoire sur {{ $labels.instance }}"
+          description: "Le noyau a tué {{ $value | printf \"%.0f\" }} processus (OOM killer) en 5 min."
+
+      - alert: ClockNotSynchronised
+        expr: min_over_time(node_timex_sync_status[5m]) == 0 and node_timex_maxerror_seconds >= 16
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Horloge non synchronisée sur {{ $labels.instance }}"
+          description: "NTP n'est plus synchronisé : horodatages, certificats et alertes peuvent être faussés."
+
+      - alert: HostRebooted
+        expr: time() - node_boot_time_seconds < 600
+        for: 0s
+        labels:
+          severity: info
+        annotations:
+          summary: "{{ $labels.instance }} a redémarré"
+          description: "La machine tourne depuis moins de 10 minutes."

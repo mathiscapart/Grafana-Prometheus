@@ -1,0 +1,134 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Versions utilisées par la CI uniquement : le .env de déploiement reste libre.
+env:
+  PROMETHEUS_VERSION: v3.15.0
+  ALERTMANAGER_VERSION: v0.34.1
+  BLACKBOX_VERSION: v0.29.0
+  GRAFANA_VERSION: 13.2.4
+  GO_VERSION: "1.27"
+  ENVSUBST_VERSION: v0.2.0
+  BCRYPT_TOOL_VERSION: v1.1.11
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Installer les linters
+        run: pip install yamllint ansible-lint
+
+      - name: yamllint
+        run: yamllint -f github .
+
+      - name: hadolint
+        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
+        with:
+          recursive: true
+          config: .hadolint.yaml
+
+      - name: shellcheck
+        run: shellcheck -x -S warning exporter/*.sh
+
+      - name: promtool check rules
+        run: >-
+          docker run --rm -v "$PWD/prometheus/rules:/rules:ro" --entrypoint /bin/sh
+          "prom/prometheus:$PROMETHEUS_VERSION" -c 'promtool check rules /rules/*.rules.yml'
+
+      - name: ansible-lint
+        working-directory: ansible
+        run: |
+          ansible-galaxy collection install -r requirements.yml
+          cp inventory/hosts.yml.example inventory/hosts.yml
+          ansible-playbook playbooks/site.yml --syntax-check
+          ansible-lint
+
+  build-test:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Générer le .env de CI
+        run: |
+          {
+            echo "PROMETHEUS_VERSION=$PROMETHEUS_VERSION"
+            echo "ALERTMANAGER_VERSION=$ALERTMANAGER_VERSION"
+            echo "BLACKBOX_VERSION=$BLACKBOX_VERSION"
+            echo "GRAFANA_VERSION=$GRAFANA_VERSION"
+            echo "GO_VERSION=$GO_VERSION"
+            echo "ENVSUBST_VERSION=$ENVSUBST_VERSION"
+            echo "BCRYPT_TOOL_VERSION=$BCRYPT_TOOL_VERSION"
+            echo "PROMETHEUS_BASIC_AUTH_USERNAME=admin"
+            echo "PROMETHEUS_BASIC_AUTH_PASSWORD='ci-prom-p@ss\$word'"
+            echo "GF_SECURITY_ADMIN_USER=admin"
+            echo "GF_SECURITY_ADMIN_PASSWORD=ci-grafana"
+            echo "GF_SERVER_ROOT_URL=http://localhost:3000"
+            echo "DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/0/ci"
+            echo "NODE_BASIC_AUTH_USERNAME=prometheus"
+            echo "NODE_BASIC_AUTH_PASSWORD=ci-node-p@ss#word"
+            echo "MYSQL_BASIC_AUTH_USERNAME=prometheus"
+            echo "MYSQL_BASIC_AUTH_PASSWORD=ci-mysql-p@ss#word"
+            echo "NGINX_BASIC_AUTH_USERNAME=prometheus"
+            echo "NGINX_BASIC_AUTH_PASSWORD=ci-nginx-p@ss#word"
+            echo "APACHE_BASIC_AUTH_USERNAME=prometheus"
+            echo "APACHE_BASIC_AUTH_PASSWORD=ci-apache-p@ss#word"
+          } > .env
+          # Toute variable de .env.example doit être couverte par la CI
+          missing=$(comm -23 <(grep -oE '^[A-Z_]+' .env.example | sort) <(grep -oE '^[A-Z_]+' .env | sort))
+          if [ -n "$missing" ]; then echo "::error::Variables absentes du .env de CI : $missing"; exit 1; fi
+
+      - name: Build
+        run: docker compose build
+
+      - name: Démarrage
+        run: docker compose up -d --wait
+
+      - name: Configurations rendues
+        run: |
+          docker compose exec -T prometheus promtool check config /etc/prometheus/prometheus.yml
+          docker compose exec -T alertmanager amtool check-config /etc/alertmanager/alertmanager.yml
+
+      - name: Accès protégés
+        run: |
+          # Prometheus : basic auth (mot de passe avec « $ », entre apostrophes dans le .env)
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:9090/-/ready)" = 401
+          # shellcheck disable=SC2016 # « $word » fait partie du mot de passe
+          curl -fsS -o /dev/null -u 'admin:ci-prom-p@ss$word' http://localhost:9090/-/ready
+          curl -fsS -u admin:ci-grafana http://localhost:3000/api/datasources/uid/prometheus/health
+          # Alertmanager et Blackbox : non publiés
+          for port in 9093 9115; do
+            if curl -s -o /dev/null --max-time 3 "http://localhost:$port/"; then echo "::error::port $port exposé"; exit 1; fi
+          done
+
+      - name: Dashboards Grafana provisionnés
+        run: |
+          expected=$(find grafana/dashboards -name '*.json' | wc -l)
+          actual=$(curl -fsu admin:ci-grafana 'http://localhost:3000/api/search?type=dash-db' | jq length)
+          echo "dashboards : $actual / $expected"
+          [ "$actual" -eq "$expected" ]
+
+      - name: Logs
+        if: failure()
+        run: docker compose logs
+
+      - name: Arrêt
+        if: always()
+        run: docker compose down -v
