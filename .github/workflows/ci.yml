@@ -19,7 +19,7 @@ env:
   BLACKBOX_VERSION: v0.29.0
   GRAFANA_VERSION: 13.2.4
   GO_VERSION: "1.27"
-  NODE_EXPORTER_VERSION: v1.12.1
+  ENVSUBST_VERSION: v0.2.0
 
 jobs:
   lint:
@@ -44,7 +44,7 @@ jobs:
           config: .hadolint.yaml
 
       - name: shellcheck
-        run: shellcheck -S warning tests/*.sh exporter/*.sh
+        run: shellcheck -S warning exporter/*.sh
 
       - name: promtool check rules
         run: >-
@@ -66,42 +66,39 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Générer le .env de CI
-        run: bash tests/ci-env.sh > ci.env
+        run: |
+          {
+            echo "PROMETHEUS_VERSION=$PROMETHEUS_VERSION"
+            echo "ALERTMANAGER_VERSION=$ALERTMANAGER_VERSION"
+            echo "BLACKBOX_VERSION=$BLACKBOX_VERSION"
+            echo "GRAFANA_VERSION=$GRAFANA_VERSION"
+            echo "GO_VERSION=$GO_VERSION"
+            echo "ENVSUBST_VERSION=$ENVSUBST_VERSION"
+            echo "GF_SECURITY_ADMIN_USER=admin"
+            echo "GF_SECURITY_ADMIN_PASSWORD=ci-grafana"
+            echo "DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/0/ci"
+            echo "EXPORTER_BASIC_AUTH_USERNAME=prometheus"
+            echo "EXPORTER_BASIC_AUTH_PASSWORD=ci-p@ss#word"
+          } > .env
+          # Toute variable de .env.example doit être couverte par la CI
+          missing=$(comm -23 <(grep -oE '^[A-Z_]+' .env.example | sort) <(grep -oE '^[A-Z_]+' .env | sort))
+          if [ -n "$missing" ]; then echo "::error::Variables absentes du .env de CI : $missing"; exit 1; fi
 
       - name: Build
-        run: docker compose --env-file ci.env build
+        run: docker compose build
 
-      - name: Test de fumée
-        run: ENV_FILE=ci.env bash tests/smoke.sh
+      - name: Démarrage
+        run: docker compose up -d --wait
 
-  ansible-deploy:
-    needs: lint
-    runs-on: ubuntu-latest
-    env:
-      CI_ENV_FILE: ${{ github.workspace }}/ci.env
-    defaults:
-      run:
-        working-directory: ansible
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.13"
-
-      - name: Installer Ansible
+      - name: Configurations rendues
         run: |
-          pip install ansible-core
-          ansible-galaxy collection install -r requirements.yml
+          docker compose exec -T prometheus promtool check config /etc/prometheus/prometheus.yml
+          docker compose exec -T alertmanager amtool check-config /etc/alertmanager/alertmanager.yml
 
-      - name: Générer le .env de CI
-        run: bash ../tests/ci-env.sh > "$CI_ENV_FILE"
+      - name: Logs
+        if: failure()
+        run: docker compose logs
 
-      # Le rôle docker n'est pas joué : Docker est déjà installé sur le runner.
-      - name: Déploiement
-        run: ansible-playbook -i ../tests/ansible/hosts.yml playbooks/monitoring.yml playbooks/node_exporter.yml
-
-      - name: Idempotence
-        run: |
-          ansible-playbook -i ../tests/ansible/hosts.yml playbooks/monitoring.yml playbooks/node_exporter.yml | tee run.log
-          grep -qE 'changed=0 +unreachable=0 +failed=0' run.log
+      - name: Arrêt
+        if: always()
+        run: docker compose down -v

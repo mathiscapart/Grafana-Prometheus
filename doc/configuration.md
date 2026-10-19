@@ -29,7 +29,8 @@ Les cibles et les règles restent dans des fichiers dédiés : plus lisibles et 
 | Variable | Rôle |
 |---|---|
 | `PROMETHEUS_VERSION`, `ALERTMANAGER_VERSION`, `BLACKBOX_VERSION`, `GRAFANA_VERSION` | Tag Docker Hub de chaque image |
-| `GO_VERSION` | Tag de l'image `golang:<GO_VERSION>-alpine` de l'image builder envsubst |
+| `GO_VERSION` | Tag de l'image `golang:<GO_VERSION>-alpine` qui compile envsubst |
+| `ENVSUBST_VERSION` | Tag de [gomodules.xyz/envsubst](https://github.com/gomodules/envsubst) (ex. `v0.2.0`) |
 | `GF_SECURITY_ADMIN_USER`, `GF_SECURITY_ADMIN_PASSWORD` | Compte admin Grafana |
 | `DISCORD_WEBHOOK_URL` | Webhook Discord des alertes ([doc](alertmanager-discord.md)) |
 | `EXPORTER_BASIC_AUTH_USERNAME`, `EXPORTER_BASIC_AUTH_PASSWORD` | Identifiants de scrape des exporters ([doc](securisation-exporters.md)) |
@@ -40,15 +41,15 @@ d'elles est absente.
 ## Templates et envsubst
 
 ```
-docker/envsubst/Dockerfile      golang:<GO_VERSION>-alpine + apk add gettext-envsubst
-        │                       → image scratch : envsubst + ses bibliothèques musl
+docker/envsubst/Dockerfile      golang:<GO_VERSION>-alpine : go install envsubst (statique)
+        │                       → image scratch : le binaire envsubst seul
         ├──▶ docker/prometheus/Dockerfile     prom/prometheus:<PROMETHEUS_VERSION>
         └──▶ docker/alertmanager/Dockerfile   prom/alertmanager:<ALERTMANAGER_VERSION>
 ```
 
-1. L'image builder `envsubst` installe le paquet Alpine `gettext-envsubst` et ne garde
-   que le binaire et ses bibliothèques (image `scratch`).
-2. Les Dockerfiles Prometheus et Alertmanager copient ce contenu dans l'image officielle
+1. L'image builder `envsubst` compile [gomodules.xyz/envsubst](https://github.com/gomodules/envsubst)
+   en binaire statique (`CGO_ENABLED=0`) et ne garde que lui (image `scratch`).
+2. Les Dockerfiles Prometheus et Alertmanager copient ce binaire dans l'image officielle
    (`COPY --from=envsubst`). Compose fournit l'image builder comme contexte de build
    nommé (`additional_contexts: envsubst: service:envsubst`) ; le service `envsubst` est
    dans le profil `build`, il est construit mais jamais lancé.
@@ -65,13 +66,13 @@ docker/envsubst/Dockerfile      golang:<GO_VERSION>-alpine + apk add gettext-env
 Seules les variables listées dans `environment:` entrent dans le conteneur : le mot de
 passe Grafana, par exemple, n'est jamais visible par Prometheus.
 
-À savoir (envsubst GNU) :
+À savoir (syntaxe bash) :
 
+- `${VAR}` est remplacé par la valeur, `${VAR:-défaut}` donne une valeur par défaut ;
 - une variable **non définie dans le conteneur est remplacée par une chaîne vide**, sans
-  erreur : c'est le `:?` de `compose.yml` qui garantit qu'elle est renseignée ;
-- seules les formes `$VAR` et `${VAR}` sont reconnues (pas de `${VAR:-défaut}`) ;
-- `$1`, `${1}`… ne sont pas des noms de variable : les `replacement: $1` des
-  `relabel_configs` restent intacts ;
+  erreur (même avec `${VAR:?…}`) : c'est le `:?` de `compose.yml` qui garantit qu'elle est renseignée ;
+- `$1`, `$2`… restent intacts : les `replacement: $1` des `relabel_configs` sont préservés ;
+- pour un `$` littéral, écrire `$$` ;
 - les valeurs sont entourées de `'…'` dans les templates : elles ne doivent pas contenir d'apostrophe.
 
 ### Appliquer une modification

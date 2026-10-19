@@ -5,6 +5,7 @@ services:
       context: ./docker/envsubst
       args:
         GO_VERSION: ${GO_VERSION:?à définir dans .env}
+        ENVSUBST_VERSION: ${ENVSUBST_VERSION:?à définir dans .env}
     profiles: [build]
 
   prometheus:
