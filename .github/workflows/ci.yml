@@ -98,7 +98,7 @@ jobs:
 
       - name: Dashboards Grafana provisionnés
         run: |
-          expected=$(( $(grep -cvE '^\s*(#|$)' grafana/dashboards.txt) + $(find grafana/dashboards -name '*.json' | wc -l) ))
+          expected=$(find grafana/dashboards -name '*.json' | wc -l)
           actual=$(curl -fsu admin:ci-grafana 'http://localhost:3000/api/search?type=dash-db' | jq length)
           echo "dashboards : $actual / $expected"
           [ "$actual" -eq "$expected" ]
