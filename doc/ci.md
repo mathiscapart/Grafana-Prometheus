@@ -5,7 +5,8 @@ Workflow GitHub Actions : `.github/workflows/ci.yml`, sur chaque pull request et
 | Job | Étapes |
 |---|---|
 | `lint` | yamllint · hadolint (`docker/*/Dockerfile`) · shellcheck · `promtool check rules` · `ansible-playbook --syntax-check` + ansible-lint |
-| `build-test` | génère un `.env` de CI · `docker compose build` · `tests/smoke.sh` |
+| `build-test` | `.env` de CI (`tests/ci-env.sh`) · `docker compose build` · `tests/smoke.sh` |
+| `ansible-deploy` | déploie les rôles `monitoring` et `node_exporter` sur le runner (`tests/ansible/hosts.yml`), puis rejoue et exige `changed=0` (idempotence) |
 
 `tests/smoke.sh` démarre la stack et vérifie :
 
@@ -17,9 +18,12 @@ Workflow GitHub Actions : `.github/workflows/ci.yml`, sur chaque pull request et
 ## Versions
 
 Les versions des images testées sont dans le bloc `env:` du workflow : ce sont les
-seules versions figées du repo. Le job vérifie aussi que toute variable de
+seules versions figées du repo. `tests/ci-env.sh` vérifie que toute variable de
 `.env.example` est renseignée dans le `.env` de CI : ajouter une variable impose de
-l'ajouter au workflow.
+l'ajouter dans ce script.
+
+Le rôle `docker` n'est pas joué en CI (Docker est déjà installé sur le runner) : il est
+seulement vérifié par `--syntax-check` et ansible-lint.
 
 ## En local
 
