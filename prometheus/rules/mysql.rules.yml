@@ -1,0 +1,56 @@
+groups:
+  - name: mysql.rules
+    rules:
+      - alert: MysqlDown
+        expr: mysql_up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "MySQL est down sur {{ $labels.instance }}"
+          description: "L'exporter MySQL ne peut plus se connecter à la base (mysql_up == 0)."
+
+      - alert: MysqlTooManyConnections
+        expr: mysql_global_status_threads_connected / mysql_global_variables_max_connections * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Trop de connexions MySQL sur {{ $labels.instance }}"
+          description: "{{ $value | printf \"%.0f\" }}% des connexions maximales (max_connections) sont utilisées."
+
+      - alert: MysqlReplicationIoThreadStopped
+        expr: mysql_slave_status_master_server_id > 0 and on (instance) mysql_slave_status_slave_io_running == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Réplication MySQL arrêtée (thread IO) sur {{ $labels.instance }}"
+          description: "Le réplica ne reçoit plus les binlogs de la source (Slave_IO_Running = No)."
+
+      - alert: MysqlReplicationSqlThreadStopped
+        expr: mysql_slave_status_master_server_id > 0 and on (instance) mysql_slave_status_slave_sql_running == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Réplication MySQL arrêtée (thread SQL) sur {{ $labels.instance }}"
+          description: "Le réplica n'applique plus les changements reçus (Slave_SQL_Running = No)."
+
+      - alert: MysqlReplicationLag
+        expr: (mysql_slave_status_seconds_behind_master - mysql_slave_status_sql_delay) > 30 and on (instance) mysql_slave_status_master_server_id > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Retard de réplication MySQL sur {{ $labels.instance }}"
+          description: "Le réplica a {{ $value | printf \"%.0f\" }} s de retard sur la source."
+
+      - alert: MysqlRestarted
+        expr: mysql_global_status_uptime < 60
+        for: 0s
+        labels:
+          severity: info
+        annotations:
+          summary: "MySQL a redémarré sur {{ $labels.instance }}"
+          description: "MySQL tourne depuis moins d'une minute."

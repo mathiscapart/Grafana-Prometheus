@@ -137,3 +137,23 @@ puis `docker compose restart blackbox`.
 
 Les fichiers `prometheus/rules/*.rules.yml` sont chargés automatiquement. Les règles d'un
 exporter sans cible ne déclenchent rien : elles peuvent rester en place.
+
+| Fichier | Alertes |
+|---|---|
+| `target.rules.yml` | `TargetDown` : une cible ne répond plus |
+| `monitoring.rules.yml` | La stack elle-même : rechargement de config raté (Prometheus, Alertmanager), rules en erreur, Prometheus sans Alertmanager, notifications en échec (ex. webhook Discord invalide) |
+| `node.rules.yml` | CPU, RAM, disque > 90 %, disque plein dans moins de 24 h (prédiction sur 6 h), OOM kill, horloge NTP non synchronisée, redémarrage |
+| `blackbox.rules.yml` | Site injoignable, certificat TLS expirant dans moins de 14 jours (warning) ou de 3 jours (critical) |
+| `mysql.rules.yml` | MySQL down, connexions > 80 % de `max_connections`, réplication arrêtée (threads IO/SQL), retard de réplication > 30 s, redémarrage |
+| `nginx.rules.yml`, `apache.rules.yml` | Serveur web down |
+| `keepalived.rules.yml` | Keepalived down, bascule MASTER/BACKUP |
+
+Sévérités : `critical` (action immédiate), `warning` (à traiter), `info` (pour information,
+ex. redémarrage). Toutes partent sur Discord ; le routage par sévérité se règle dans
+`alertmanager/alertmanager.yml.tmpl` (cf. [alertmanager-discord.md](alertmanager-discord.md)).
+
+Les règles de réplication MySQL ne concernent que les réplicas : un serveur sans
+réplication ne déclenche rien. Pour tester une règle avant de la déployer :
+`promtool check rules` (syntaxe) et
+[`promtool test rules`](https://prometheus.io/docs/prometheus/latest/configuration/unit_testing_rules/)
+(comportement sur des séries simulées).
