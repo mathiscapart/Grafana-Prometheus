@@ -1,38 +1,20 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Installe nginx-prometheus-exporter (service systemd, basic auth via web.yml).
+# Nginx doit exposer stub_status sur NGINX_SCRAPE_URI.
+# Usage : sudo VERSION=x.y.z ./nginx_exporter.sh   — cf. doc/securisation-exporters.md
+set -euo pipefail
+# shellcheck source=common.sh
+source "$(dirname "$0")/common.sh"
 
-version="${VERSION:-1.4.1}"
-arch="${ARCH:-linux_amd64}"
-bin_dir="${BIN_DIR:-/usr/local/bin}"
+VERSION="${VERSION:?VERSION requise, ex. VERSION=X.Y.Z (github.com/nginx/nginx-prometheus-exporter/releases)}"
+PORT="${PORT:-9113}"
+NGINX_SCRAPE_URI="${NGINX_SCRAPE_URI:-http://127.0.0.1:8080/nginx_status}"
 
-wget "https://github.com/nginx/nginx-prometheus-exporter/releases/download/v${version}/nginx-prometheus-exporter_${version}_${arch}.tar.gz" \
-    -O /tmp/nginx_exporter.tar.gz
-
-mkdir -p /tmp/nginx_exporter
-
-cd /tmp || { echo "ERROR! No /tmp found.."; exit 1; }
-
-tar xfz /tmp/nginx_exporter.tar.gz -C /tmp/nginx_exporter || { echo "ERROR! Extracting the nginx_exporter tar"; exit 1; }
-
-cp "/tmp/nginx_exporter/nginx-prometheus-exporter" "$bin_dir"
-chmod +x "$bin_dir/nginx-prometheus-exporter"
-
-cat <<EOF > /etc/systemd/system/nginx_exporter.service
-[Unit]
-Description=Nginx Exporter for Prometheus
-After=network.target
-
-[Service]
-User=root
-Group=sudo
-Type=simple
-ExecStart=/usr/local/bin/nginx-prometheus-exporter  --nginx.scrape-uri=http://127.0.0.1:8080/nginx_status
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl enable nginx_exporter.service
-systemctl start nginx_exporter.service
-
-echo "SUCCESS! Installation succeeded!"
+require_root
+install_prerequisites
+create_user
+write_web_config
+install_binary "https://github.com/nginx/nginx-prometheus-exporter/releases/download/v$VERSION/nginx-prometheus-exporter_${VERSION}_linux_$(detect_arch).tar.gz" nginx-prometheus-exporter
+install_service nginx_exporter "$EXPORTERS_USER" /usr/local/bin/nginx-prometheus-exporter \
+    --nginx.scrape-uri="$NGINX_SCRAPE_URI" --web.listen-address=":$PORT" --web.config.file="$WEB_CONFIG"
+verify_service nginx_exporter "$PORT" 401

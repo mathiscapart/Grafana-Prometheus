@@ -17,26 +17,19 @@ Nous devons monitorer l'infrastructure Dundermifflin, pour ce faire nous utiliso
 
 - Copier ``.env.example`` en ``.env`` et remplacer chaque ``XXX`` (versions, webhook Discord, identifiants).
 - Renseigner les targets de chaque exporter dans ``prometheus/targets/<job>.json`` (modèle : ``node.json.example``).
-- Sécuriser les exporters avec un ``web.yml`` (modèle : ``exporter/web.yml.example``).
-
-- Pour déployer vos `` exporters`` sur vos serveurs, vous pouvez utiliser les commandes ci-dessous :
+- Installer les exporters sur vos serveurs avec les scripts du dossier ``exporter/`` : ils
+  les protègent par basic auth, avec les identifiants du ``.env``
+  (cf. [doc/securisation-exporters.md](doc/securisation-exporters.md)) :
 ````bash
-# Exemple (ajustez selon votre script)
-cd exporter
-./install_node_exporter.sh
-./install_apache_exporter.sh
-# etc.
+sudo EXPORTER_BASIC_AUTH_USERNAME=prometheus EXPORTER_BASIC_AUTH_PASSWORD='<mot de passe du .env>' VERSION=X.Y.Z ./exporter/node_exporter.sh
 ````
-
-
-⚠️ N'oubliez pas d'initialiser les variables dans les scripts, qui se trouvent dans le dossier exporter
 
 La documentation détaillée est dans le dossier [`doc/`](doc) :
 
 - [Configuration (.env, templates, targets, rules)](doc/configuration.md)
 - [Alertmanager → Discord](doc/alertmanager-discord.md)
 - [Grafana (configuration, import de dashboards)](doc/grafana.md)
-- [Sécurisation des exporters (web.yml)](doc/securisation-exporters.md)
+- [Installation et sécurisation des exporters](doc/securisation-exporters.md)
 - [Déploiement avec Ansible](doc/ansible.md)
 - [CI (lint, build, tests)](doc/ci.md)
 

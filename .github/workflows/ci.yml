@@ -44,7 +44,7 @@ jobs:
           config: .hadolint.yaml
 
       - name: shellcheck
-        run: shellcheck -S warning exporter/*.sh
+        run: shellcheck -x -S warning exporter/*.sh
 
       - name: promtool check rules
         run: >-
