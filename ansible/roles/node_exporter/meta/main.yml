@@ -1,0 +1,13 @@
+---
+galaxy_info:
+  role_name: node_exporter
+  author: mathiscapart
+  description: Déploie node_exporter en conteneur avec Docker Compose
+  license: proprietary
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions: [all]
+    - name: Ubuntu
+      versions: [all]
+dependencies: []

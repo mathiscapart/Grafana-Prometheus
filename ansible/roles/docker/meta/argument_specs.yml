@@ -1,0 +1,15 @@
+---
+argument_specs:
+  main:
+    short_description: Installe Docker Engine et le plugin Compose
+    options:
+      docker_apt_distribution:
+        type: str
+        description: Distribution du dépôt Docker (debian ou ubuntu).
+      docker_apt_url:
+        type: str
+        description: URL du dépôt APT Docker.
+      docker_packages:
+        type: list
+        elements: str
+        description: Paquets installés.

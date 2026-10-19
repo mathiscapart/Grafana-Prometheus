@@ -2,61 +2,76 @@
 
 ```
 ansible/
-├── ansible.cfg              inventaire par défaut : inventory.yml
-├── inventory.yml.example    modèle d'inventaire (inventory.yml n'est pas versionné)
-├── requirements.yml         collection community.docker
-├── site.yml                 playbook principal
+├── ansible.cfg                  inventaire, roles_path, options SSH
+├── requirements.yml             collections nécessaires (community.docker)
+├── inventory/
+│   ├── hosts.yml.example        modèle : hôtes et variables propres au déploiement
+│   ├── hosts.yml                votre inventaire (non versionné)
+│   └── group_vars/
+│       └── monitoring.yml       variables communes du groupe monitoring (targets)
+├── playbooks/
+│   ├── site.yml                 tout : docker → monitoring → node_exporter
+│   ├── docker.yml
+│   ├── monitoring.yml
+│   └── node_exporter.yml
 └── roles/
-    ├── docker/              installe Docker + plugin Compose (Debian)
-    ├── monitoring/          déploie la stack (compose, templates, rules, .env, targets)
-    └── node_exporter/       déploie node_exporter en conteneur
+    ├── docker/                  Docker Engine + plugin Compose (Debian, Ubuntu)
+    ├── monitoring/              stack Prometheus, Alertmanager, Blackbox, Grafana
+    └── node_exporter/           node_exporter en conteneur
 ```
+
+Chaque rôle suit la structure standard (`defaults/`, `tasks/`, `handlers/`, `templates/`,
+`meta/`) et documente ses variables dans son `README.md`. Les variables sont validées
+au lancement (`meta/argument_specs.yml`) : une variable obligatoire manquante arrête le
+playbook avant toute modification.
 
 ## Prérequis
 
-- Machine de contrôle : `ansible-core` puis `ansible-galaxy collection install -r ansible/requirements.yml`.
-- Serveurs : Debian, accès SSH root (ou `become`).
-- Un `.env` rempli à la racine du repo (cf. [configuration.md](configuration.md)) :
-  il est copié tel quel sur le serveur de monitoring (droits `0600`).
+- Machine de contrôle (Linux, macOS ou WSL) : `ansible-core` ≥ 2.15, puis
+  `ansible-galaxy collection install -r requirements.yml`.
+- Serveurs : Debian ou Ubuntu, accès SSH avec droits root (`become`).
+- Un `.env` rempli à la racine du repo (cf. [configuration.md](configuration.md)) : il est
+  copié tel quel sur le serveur de monitoring (droits `0600`).
 
 ## Lancer
 
 ```bash
 cd ansible
-cp inventory.yml.example inventory.yml   # puis adapter les hôtes
-ansible-playbook site.yml
+cp inventory/hosts.yml.example inventory/hosts.yml   # puis adapter hôtes et variables
+ansible-playbook playbooks/site.yml
 ```
 
-Pour un seul rôle : `ansible-playbook site.yml --limit monitoring`.
+Exemples :
 
-## Variables
+```bash
+ansible-playbook playbooks/monitoring.yml            # seulement la stack
+ansible-playbook playbooks/site.yml --limit 192.168.1.10
+ansible-playbook playbooks/site.yml --check --diff   # simulation
+```
 
-Toutes ont une valeur par défaut (`roles/*/defaults/main.yml`) et se surchargent dans l'inventaire.
+## Où mettre quoi
 
-| Variable | Défaut | Rôle |
-|---|---|---|
-| `monitoring_dir` | `/opt/monitoring` | Répertoire de la stack sur le serveur |
-| `monitoring_env_file` | `<repo>/.env` | `.env` local copié sur le serveur |
-| `monitoring_files` | compose, docker, templates, rules… | Fichiers du repo déployés |
-| `monitoring_prometheus_targets` | `{}` | Targets générées, cf. ci-dessous |
-| `node_exporter_dir` | `/opt/node_exporter` | Répertoire de node_exporter sur les hôtes |
+| Quoi | Où |
+|---|---|
+| Hôtes, utilisateur SSH, version de node_exporter | `inventory/hosts.yml` |
+| Variables communes à un groupe | `inventory/group_vars/<groupe>.yml` |
+| Variables propres à un hôte | `inventory/host_vars/<hôte>.yml` |
+| Valeurs par défaut d'un rôle | `roles/<rôle>/defaults/main.yml` (ne pas modifier : surcharger dans l'inventaire) |
 
-### Targets
+Variables de chaque rôle : [docker](../ansible/roles/docker/README.md) ·
+[monitoring](../ansible/roles/monitoring/README.md) ·
+[node_exporter](../ansible/roles/node_exporter/README.md).
 
-`monitoring_prometheus_targets` génère `prometheus/targets/<job>.json` sur le serveur.
-Un job absent du dictionnaire n'est pas touché : son fichier peut être géré à la main.
+## Targets
+
+`inventory/group_vars/monitoring.yml` génère `prometheus/targets/node.json` à partir du
+groupe `node_exporter` (port 9100). Pour d'autres jobs :
 
 ```yaml
 monitoring_prometheus_targets:
-  # toutes les machines du groupe node_exporter, port 9100
-  node: "{{ groups['node_exporter'] | map('regex_replace', '$', ':9100') | list }}"
+  node: "{{ groups['node_exporter'] | default([]) | map('regex_replace', '$', ':9100') | list }}"
   blackbox:
     - https://example.com/
 ```
 
-## Comportement
-
-- Les fichiers modifiés (templates, rules, `.env`…) entraînent la recréation des conteneurs,
-  donc le re-rendu des templates. Sans modification, un nouveau passage ne change rien.
-- Les targets sont relues à chaud par Prometheus, sans redémarrage.
-- Les images Prometheus/Alertmanager sont construites sur le serveur (`build: always`, avec cache).
+Un job absent du dictionnaire n'est pas touché : son fichier peut être géré à la main sur le serveur.

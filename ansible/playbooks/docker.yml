@@ -1,0 +1,6 @@
+---
+- name: Installer Docker
+  hosts: monitoring:node_exporter
+  become: true
+  roles:
+    - docker

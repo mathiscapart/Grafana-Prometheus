@@ -1,0 +1,12 @@
+---
+argument_specs:
+  main:
+    short_description: Déploie node_exporter en conteneur
+    options:
+      node_exporter_version:
+        type: str
+        required: true
+        description: Tag de l'image prom/node-exporter (ex. vX.Y.Z).
+      node_exporter_dir:
+        type: str
+        description: Répertoire du compose sur l'hôte.

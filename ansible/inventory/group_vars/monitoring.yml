@@ -1,0 +1,7 @@
+---
+# Targets écrites dans prometheus/targets/<job>.json sur le serveur (cf. roles/monitoring/README.md).
+# Un job absent de ce dictionnaire n'est pas touché : son fichier peut être géré à la main.
+monitoring_prometheus_targets:
+  node: "{{ groups['node_exporter'] | default([]) | map('regex_replace', '$', ':9100') | list }}"
+  # blackbox:
+  #   - https://example.com/

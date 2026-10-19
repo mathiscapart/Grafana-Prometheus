@@ -1,0 +1,10 @@
+---
+# Dépôt APT officiel Docker (debian ou ubuntu, déduit de l'hôte)
+docker_apt_distribution: "{{ ansible_facts['distribution'] | lower }}"
+docker_apt_url: "https://download.docker.com/linux/{{ docker_apt_distribution }}"
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin

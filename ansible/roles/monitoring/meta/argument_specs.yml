@@ -1,0 +1,21 @@
+---
+argument_specs:
+  main:
+    short_description: Déploie la stack de monitoring avec Docker Compose
+    options:
+      monitoring_dir:
+        type: str
+        description: Répertoire de la stack sur le serveur.
+      monitoring_repo_dir:
+        type: str
+        description: Racine du repo sur la machine de contrôle.
+      monitoring_env_file:
+        type: str
+        description: Fichier .env local copié sur le serveur.
+      monitoring_files:
+        type: list
+        elements: str
+        description: Fichiers et dossiers du repo déployés.
+      monitoring_prometheus_targets:
+        type: dict
+        description: Cibles par job, écrites dans prometheus/targets/<job>.json.

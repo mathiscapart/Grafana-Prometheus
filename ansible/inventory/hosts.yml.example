@@ -1,0 +1,20 @@
+# Copier en hosts.yml (non versionné) et adapter — cf. doc/ansible.md
+# Les variables communes à un groupe sont dans group_vars/<groupe>.yml.
+all:
+  vars:
+    ansible_user: root
+    # ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+
+  children:
+    # Serveur qui héberge la stack (Prometheus, Alertmanager, Blackbox, Grafana)
+    monitoring:
+      hosts:
+        192.168.1.5:
+
+    # Hôtes sur lesquels node_exporter est déployé
+    node_exporter:
+      hosts:
+        192.168.1.10:
+        192.168.1.11:
+      vars:
+        node_exporter_version: XXX # tag de prom/node-exporter

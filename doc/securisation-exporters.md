@@ -52,7 +52,7 @@ ExecStart=/usr/local/bin/node_exporter --web.config.file=/etc/exporter/web.yml
 
 Puis `systemctl daemon-reload && systemctl restart node_exporter`.
 
-En Docker (ex. `ansible/roles/node_exporter/files/compose.yml`) :
+En Docker (ex. `ansible/roles/node_exporter/templates/compose.yml.j2`) :
 
 ```yaml
     command:

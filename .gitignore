@@ -7,4 +7,5 @@
 # Config propre à chaque déploiement (voir les fichiers *.example)
 prometheus/targets/*.json
 web.yml
-ansible/inventory.yml
+ansible/inventory/hosts.yml
+.ansible
