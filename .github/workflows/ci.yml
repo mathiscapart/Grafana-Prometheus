@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Versions utilisées par la CI uniquement : le .env de déploiement reste libre.
+env:
+  PROMETHEUS_VERSION: v3.15.0
+  ALERTMANAGER_VERSION: v0.34.1
+  BLACKBOX_VERSION: v0.29.0
+  GRAFANA_VERSION: 13.2.4
+  GO_VERSION: "1.27"
+  NODE_EXPORTER_VERSION: v1.12.1
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Installer les linters
+        run: pip install yamllint ansible-lint
+
+      - name: yamllint
+        run: yamllint -f github .
+
+      - name: hadolint
+        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
+        with:
+          recursive: true
+          config: .hadolint.yaml
+
+      - name: shellcheck
+        run: shellcheck -S warning tests/*.sh exporter/*.sh
+
+      - name: promtool check rules
+        run: >-
+          docker run --rm -v "$PWD/prometheus/rules:/rules:ro" --entrypoint /bin/sh
+          "prom/prometheus:$PROMETHEUS_VERSION" -c 'promtool check rules /rules/*.rules.yml'
+
+      - name: ansible-lint
+        working-directory: ansible
+        run: |
+          ansible-galaxy collection install -r requirements.yml
+          cp inventory.yml.example inventory.yml
+          ansible-playbook site.yml --syntax-check
+          ansible-lint
+
+  build-test:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Générer le .env de CI
+        run: |
+          cat > ci.env <<EOF
+          PROMETHEUS_VERSION=$PROMETHEUS_VERSION
+          ALERTMANAGER_VERSION=$ALERTMANAGER_VERSION
+          BLACKBOX_VERSION=$BLACKBOX_VERSION
+          GRAFANA_VERSION=$GRAFANA_VERSION
+          GO_VERSION=$GO_VERSION
+          GF_SECURITY_ADMIN_USER=admin
+          GF_SECURITY_ADMIN_PASSWORD=ci-grafana
+          DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/0/ci
+          EXPORTER_BASIC_AUTH_USERNAME=prometheus
+          EXPORTER_BASIC_AUTH_PASSWORD=ci-p@ss#word
+          EOF
+          # Toute variable de .env.example doit être couverte par la CI
+          missing=$(comm -23 <(grep -oE '^[A-Z_]+' .env.example | sort) <(grep -oE '^[A-Z_]+' ci.env | sort))
+          if [ -n "$missing" ]; then echo "::error::Variables absentes de ci.env : $missing"; exit 1; fi
+
+      - name: Build
+        run: docker compose --env-file ci.env build
+
+      - name: Test de fumée
+        run: ENV_FILE=ci.env bash tests/smoke.sh

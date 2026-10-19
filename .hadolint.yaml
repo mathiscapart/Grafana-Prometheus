@@ -1,0 +1,7 @@
+ignored:
+  # Les versions sont pilotées par le .env, pas épinglées dans les Dockerfiles
+  - DL3018
+  # « envsubst » est un contexte de build nommé fourni par compose (additional_contexts),
+  # et l'image builder est un scratch qui ne contient que envsubst et ses bibliothèques
+  - DL3022
+  - DL3067

@@ -1,0 +1,25 @@
+extends: default
+
+yaml-files:
+  - "*.yml"
+  - "*.yaml"
+  - "*.yml.tmpl"
+  - "*.yml.example"
+  - ".yamllint.yml"
+
+rules:
+  document-start: disable
+  line-length:
+    max: 160
+    level: warning
+  truthy:
+    check-keys: false
+  # Réglages attendus par ansible-lint
+  comments:
+    min-spaces-from-content: 1
+  comments-indentation: false
+  braces:
+    max-spaces-inside: 1
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
