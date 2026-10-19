@@ -1,0 +1,20 @@
+[
+  {
+    "labels": {
+      "env": "production"
+    },
+    "targets": [
+      "https://example.com/",
+      "https://example.org/health"
+    ]
+  },
+  {
+    "labels": {
+      "__param_module": "tcp_connect",
+      "env": "production"
+    },
+    "targets": [
+      "192.168.1.20:5432"
+    ]
+  }
+]
