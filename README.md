@@ -21,7 +21,7 @@ Nous devons monitorer l'infrastructure Dundermifflin, pour ce faire nous utiliso
   les protègent par basic auth, avec les identifiants du ``.env``
   (cf. [doc/securisation-exporters.md](doc/securisation-exporters.md)) :
 ````bash
-sudo EXPORTER_BASIC_AUTH_USERNAME=prometheus EXPORTER_BASIC_AUTH_PASSWORD='<mot de passe du .env>' VERSION=X.Y.Z ./exporter/node_exporter.sh
+sudo NODE_BASIC_AUTH_USERNAME=prometheus NODE_BASIC_AUTH_PASSWORD='<mot de passe du .env>' VERSION=X.Y.Z ./exporter/node_exporter.sh
 ````
 
 La documentation détaillée est dans le dossier [`doc/`](doc) :

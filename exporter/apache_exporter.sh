@@ -9,11 +9,12 @@ source "$(dirname "$0")/common.sh"
 VERSION="${VERSION:?VERSION requise, ex. VERSION=X.Y.Z (github.com/Lusitaniae/apache_exporter/releases)}"
 PORT="${PORT:-9117}"
 APACHE_SCRAPE_URI="${APACHE_SCRAPE_URI:-http://localhost/server-status?auto}"
+WEB_CONFIG="$EXPORTERS_CONFIG_DIR/apache_exporter.web.yml"
 
 require_root
 install_prerequisites
 create_user
-write_web_config
+write_web_config "$WEB_CONFIG" APACHE
 install_binary "https://github.com/Lusitaniae/apache_exporter/releases/download/v$VERSION/apache_exporter-$VERSION.linux-$(detect_arch).tar.gz" apache_exporter
 install_service apache_exporter "$EXPORTERS_USER" /usr/local/bin/apache_exporter \
     --scrape_uri="$APACHE_SCRAPE_URI" --web.listen-address=":$PORT" --web.config.file="$WEB_CONFIG"

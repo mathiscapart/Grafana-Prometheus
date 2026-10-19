@@ -78,8 +78,14 @@ jobs:
             echo "GF_SECURITY_ADMIN_PASSWORD=ci-grafana"
             echo "GF_SERVER_ROOT_URL=http://localhost:3000"
             echo "DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/0/ci"
-            echo "EXPORTER_BASIC_AUTH_USERNAME=prometheus"
-            echo "EXPORTER_BASIC_AUTH_PASSWORD=ci-p@ss#word"
+            echo "NODE_BASIC_AUTH_USERNAME=prometheus"
+            echo "NODE_BASIC_AUTH_PASSWORD=ci-node-p@ss#word"
+            echo "MYSQL_BASIC_AUTH_USERNAME=prometheus"
+            echo "MYSQL_BASIC_AUTH_PASSWORD=ci-mysql-p@ss#word"
+            echo "NGINX_BASIC_AUTH_USERNAME=prometheus"
+            echo "NGINX_BASIC_AUTH_PASSWORD=ci-nginx-p@ss#word"
+            echo "APACHE_BASIC_AUTH_USERNAME=prometheus"
+            echo "APACHE_BASIC_AUTH_PASSWORD=ci-apache-p@ss#word"
           } > .env
           # Toute variable de .env.example doit être couverte par la CI
           missing=$(comm -23 <(grep -oE '^[A-Z_]+' .env.example | sort) <(grep -oE '^[A-Z_]+' .env | sort))

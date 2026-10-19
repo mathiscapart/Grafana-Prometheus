@@ -9,11 +9,12 @@ source "$(dirname "$0")/common.sh"
 VERSION="${VERSION:?VERSION requise, ex. VERSION=X.Y.Z (github.com/nginx/nginx-prometheus-exporter/releases)}"
 PORT="${PORT:-9113}"
 NGINX_SCRAPE_URI="${NGINX_SCRAPE_URI:-http://127.0.0.1:8080/nginx_status}"
+WEB_CONFIG="$EXPORTERS_CONFIG_DIR/nginx_exporter.web.yml"
 
 require_root
 install_prerequisites
 create_user
-write_web_config
+write_web_config "$WEB_CONFIG" NGINX
 install_binary "https://github.com/nginx/nginx-prometheus-exporter/releases/download/v$VERSION/nginx-prometheus-exporter_${VERSION}_linux_$(detect_arch).tar.gz" nginx-prometheus-exporter
 install_service nginx_exporter "$EXPORTERS_USER" /usr/local/bin/nginx-prometheus-exporter \
     --nginx.scrape-uri="$NGINX_SCRAPE_URI" --web.listen-address=":$PORT" --web.config.file="$WEB_CONFIG"

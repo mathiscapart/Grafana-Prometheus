@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Fonctions communes aux scripts d'installation des exporters (sourcé, pas exécuté).
 # Chaque exporter : binaire dans /usr/local/bin, service systemd, utilisateur système
-# « prometheus », basic auth via /etc/prometheus-exporters/web.yml (cf. doc/securisation-exporters.md).
+# « prometheus », basic auth via /etc/prometheus-exporters/<exporter>.web.yml
+# (cf. doc/securisation-exporters.md).
 
 readonly EXPORTERS_USER=prometheus
 readonly EXPORTERS_CONFIG_DIR=/etc/prometheus-exporters
-readonly WEB_CONFIG="$EXPORTERS_CONFIG_DIR/web.yml"
 
 log() { echo "[INFO] $*"; }
 die() { echo "[ERREUR] $*" >&2; exit 1; }
@@ -46,29 +46,32 @@ create_user() {
     install -d -m 0750 -o root -g "$EXPORTERS_USER" "$EXPORTERS_CONFIG_DIR"
 }
 
-# Identifiants : EXPORTER_BASIC_AUTH_USERNAME / EXPORTER_BASIC_AUTH_PASSWORD (mêmes noms
-# que dans le .env de la stack), demandés s'ils sont absents. Le web.yml est partagé par
-# les exporters de l'hôte : un fichier existant est conservé, sauf WEB_CONFIG_RESET=1.
+# write_web_config <fichier web.yml> <PRÉFIXE>
+# Identifiants : <PRÉFIXE>_BASIC_AUTH_USERNAME / <PRÉFIXE>_BASIC_AUTH_PASSWORD (mêmes noms
+# que dans le .env de la stack), demandés s'ils sont absents. Un fichier existant est
+# conservé, sauf WEB_CONFIG_RESET=1 (ex. après un changement de mot de passe dans le .env).
 write_web_config() {
-    if [ -f "$WEB_CONFIG" ] && [ "${WEB_CONFIG_RESET:-0}" != 1 ]; then
-        log "$WEB_CONFIG existant conservé"
+    local file=$1 user_var="$2_BASIC_AUTH_USERNAME" password_var="$2_BASIC_AUTH_PASSWORD" user password hash
+    if [ -f "$file" ] && [ "${WEB_CONFIG_RESET:-0}" != 1 ]; then
+        log "$file existant conservé"
         return
     fi
-    local user="${EXPORTER_BASIC_AUTH_USERNAME:-}" password="${EXPORTER_BASIC_AUTH_PASSWORD:-}" hash
-    [ -n "$user" ] || read -rp "Utilisateur basic auth des exporters : " user || true
-    [ -n "$password" ] || { read -rsp "Mot de passe basic auth des exporters : " password || true; echo; }
-    [ -n "$user" ] && [ -n "$password" ] || die "identifiants basic auth requis"
+    user="${!user_var:-}"
+    password="${!password_var:-}"
+    [ -n "$user" ] || read -rp "Utilisateur basic auth ($user_var) : " user || true
+    [ -n "$password" ] || { read -rsp "Mot de passe basic auth ($password_var) : " password || true; echo; }
+    [ -n "$user" ] && [ -n "$password" ] || die "identifiants basic auth requis ($user_var, $password_var)"
     [[ "$user" =~ ^[A-Za-z0-9._-]+$ ]] || die "utilisateur basic auth invalide (lettres, chiffres, . _ -)"
 
     hash=$(htpasswd -nbBC 10 "" "$password" | tr -d ':\n')
-    log "Écriture de $WEB_CONFIG"
-    cat >"$WEB_CONFIG" <<EOF
-# Généré par exporter/common.sh : basic auth des exporters (exporter-toolkit)
+    log "Écriture de $file"
+    cat >"$file" <<EOF
+# Généré par exporter/common.sh : basic auth de l'exporter (exporter-toolkit)
 basic_auth_users:
   $user: '$hash'
 EOF
-    chown root:"$EXPORTERS_USER" "$WEB_CONFIG"
-    chmod 0640 "$WEB_CONFIG"
+    chown root:"$EXPORTERS_USER" "$file"
+    chmod 0640 "$file"
 }
 
 # install_binary <url de l'archive> <nom du binaire>

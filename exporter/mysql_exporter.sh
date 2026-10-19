@@ -12,6 +12,7 @@ PORT="${PORT:-9104}"
 MYSQL_EXPORTER_USER="${MYSQL_EXPORTER_USER:-exporter}"
 MYSQL_EXPORTER_PASSWORD="${MYSQL_EXPORTER_PASSWORD:-}"
 MY_CNF="$EXPORTERS_CONFIG_DIR/mysqld_exporter.cnf"
+WEB_CONFIG="$EXPORTERS_CONFIG_DIR/mysqld_exporter.web.yml"
 
 require_root
 command -v mysql >/dev/null || die "client mysql introuvable : lancer ce script sur le serveur MySQL/MariaDB"
@@ -21,7 +22,7 @@ command -v mysql >/dev/null || die "client mysql introuvable : lancer ce script 
 
 install_prerequisites
 create_user
-write_web_config
+write_web_config "$WEB_CONFIG" MYSQL
 
 log "Création de l'utilisateur MySQL $MYSQL_EXPORTER_USER@localhost"
 MYSQL_PWD="${MYSQL_ROOT_PASSWORD:-}" mysql -u root <<SQL

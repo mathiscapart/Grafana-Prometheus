@@ -16,8 +16,14 @@ services:
       args:
         PROMETHEUS_VERSION: ${PROMETHEUS_VERSION:?à définir dans .env}
     environment:
-      EXPORTER_BASIC_AUTH_USERNAME: ${EXPORTER_BASIC_AUTH_USERNAME:?à définir dans .env}
-      EXPORTER_BASIC_AUTH_PASSWORD: ${EXPORTER_BASIC_AUTH_PASSWORD:?à définir dans .env}
+      NODE_BASIC_AUTH_USERNAME: ${NODE_BASIC_AUTH_USERNAME:?à définir dans .env}
+      NODE_BASIC_AUTH_PASSWORD: ${NODE_BASIC_AUTH_PASSWORD:?à définir dans .env}
+      MYSQL_BASIC_AUTH_USERNAME: ${MYSQL_BASIC_AUTH_USERNAME:?à définir dans .env}
+      MYSQL_BASIC_AUTH_PASSWORD: ${MYSQL_BASIC_AUTH_PASSWORD:?à définir dans .env}
+      NGINX_BASIC_AUTH_USERNAME: ${NGINX_BASIC_AUTH_USERNAME:?à définir dans .env}
+      NGINX_BASIC_AUTH_PASSWORD: ${NGINX_BASIC_AUTH_PASSWORD:?à définir dans .env}
+      APACHE_BASIC_AUTH_USERNAME: ${APACHE_BASIC_AUTH_USERNAME:?à définir dans .env}
+      APACHE_BASIC_AUTH_PASSWORD: ${APACHE_BASIC_AUTH_PASSWORD:?à définir dans .env}
     ports:
       - "9090:9090"
     restart: unless-stopped

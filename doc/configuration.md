@@ -35,7 +35,7 @@ Les cibles et les règles restent dans des fichiers dédiés : plus lisibles et 
 | `GF_SECURITY_ADMIN_USER`, `GF_SECURITY_ADMIN_PASSWORD` | Compte admin Grafana (créé au premier démarrage, [doc](grafana.md)) |
 | `GF_SERVER_ROOT_URL` | URL publique de Grafana |
 | `DISCORD_WEBHOOK_URL` | Webhook Discord des alertes ([doc](alertmanager-discord.md)) |
-| `EXPORTER_BASIC_AUTH_USERNAME`, `EXPORTER_BASIC_AUTH_PASSWORD` | Identifiants de scrape des exporters ([doc](securisation-exporters.md)) |
+| `<EXPORTER>_BASIC_AUTH_USERNAME`, `<EXPORTER>_BASIC_AUTH_PASSWORD` | Basic auth de chaque exporter, `<EXPORTER>` = `NODE`, `MYSQL`, `NGINX`, `APACHE` ([doc](securisation-exporters.md)) |
 
 Toutes ces variables sont obligatoires : `docker compose` refuse de démarrer si l'une
 d'elles est absente.

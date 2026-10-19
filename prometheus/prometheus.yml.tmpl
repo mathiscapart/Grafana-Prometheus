@@ -40,40 +40,38 @@ scrape_configs:
 
   - job_name: "node"
     basic_auth:
-      username: '${EXPORTER_BASIC_AUTH_USERNAME}'
-      password: '${EXPORTER_BASIC_AUTH_PASSWORD}'
+      username: '${NODE_BASIC_AUTH_USERNAME}'
+      password: '${NODE_BASIC_AUTH_PASSWORD}'
     file_sd_configs:
       - files:
           - targets/node.json
 
   - job_name: "mysql"
     basic_auth:
-      username: '${EXPORTER_BASIC_AUTH_USERNAME}'
-      password: '${EXPORTER_BASIC_AUTH_PASSWORD}'
+      username: '${MYSQL_BASIC_AUTH_USERNAME}'
+      password: '${MYSQL_BASIC_AUTH_PASSWORD}'
     file_sd_configs:
       - files:
           - targets/mysql.json
 
+  # keepalived-exporter ne gère pas l'authentification (cf. doc/securisation-exporters.md)
   - job_name: "keepalived"
-    basic_auth:
-      username: '${EXPORTER_BASIC_AUTH_USERNAME}'
-      password: '${EXPORTER_BASIC_AUTH_PASSWORD}'
     file_sd_configs:
       - files:
           - targets/keepalived.json
 
   - job_name: "nginx"
     basic_auth:
-      username: '${EXPORTER_BASIC_AUTH_USERNAME}'
-      password: '${EXPORTER_BASIC_AUTH_PASSWORD}'
+      username: '${NGINX_BASIC_AUTH_USERNAME}'
+      password: '${NGINX_BASIC_AUTH_PASSWORD}'
     file_sd_configs:
       - files:
           - targets/nginx.json
 
   - job_name: "apache"
     basic_auth:
-      username: '${EXPORTER_BASIC_AUTH_USERNAME}'
-      password: '${EXPORTER_BASIC_AUTH_PASSWORD}'
+      username: '${APACHE_BASIC_AUTH_USERNAME}'
+      password: '${APACHE_BASIC_AUTH_PASSWORD}'
     file_sd_configs:
       - files:
           - targets/apache.json
