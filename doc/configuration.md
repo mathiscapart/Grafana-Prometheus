@@ -1,0 +1,136 @@
+# Configuration du projet
+
+## Démarrage rapide
+
+```bash
+cp .env.example .env                                  # puis remplacer chaque XXX
+cp prometheus/targets/node.json.example prometheus/targets/node.json   # puis mettre vos IP
+docker compose up -d --build
+```
+
+## Ce qui se configure où
+
+| Quoi | Où | Versionné |
+|---|---|---|
+| Versions des images, secrets, identifiants | `.env` | non (`.env.example` sert de modèle) |
+| Jobs de scrape Prometheus | `prometheus/prometheus.yml.tmpl` | oui |
+| Cibles (IP:port) de chaque job | `prometheus/targets/<job>.json` | non (`*.json.example` sert de modèle) |
+| Règles d'alerte | `prometheus/rules/*.rules.yml` | oui |
+| Routage et receivers des alertes | `alertmanager/alertmanager.yml.tmpl` | oui |
+| Modules blackbox | `blackbox/blackbox.yml` | oui |
+| Authentification / TLS des exporters | `web.yml` sur chaque hôte exporter | non (`exporter/web.yml.example`) |
+
+Le `.env` porte les valeurs qui changent d'un déploiement à l'autre (versions, secrets).
+Les cibles et les règles restent dans des fichiers dédiés : plus lisibles et plus simples
+à maintenir qu'une liste d'IP dans une variable d'environnement.
+
+## Variables du `.env`
+
+| Variable | Rôle |
+|---|---|
+| `PROMETHEUS_VERSION`, `ALERTMANAGER_VERSION`, `BLACKBOX_VERSION`, `GRAFANA_VERSION` | Tag Docker Hub de chaque image |
+| `GO_VERSION` | Tag de l'image `golang:<GO_VERSION>-alpine` de l'image builder envsubst |
+| `GF_SECURITY_ADMIN_USER`, `GF_SECURITY_ADMIN_PASSWORD` | Compte admin Grafana |
+| `DISCORD_WEBHOOK_URL` | Webhook Discord des alertes ([doc](alertmanager-discord.md)) |
+| `EXPORTER_BASIC_AUTH_USERNAME`, `EXPORTER_BASIC_AUTH_PASSWORD` | Identifiants de scrape des exporters ([doc](securisation-exporters.md)) |
+
+Toutes ces variables sont obligatoires : `docker compose` refuse de démarrer si l'une
+d'elles est absente.
+
+## Templates et envsubst
+
+```
+docker/envsubst/Dockerfile      golang:<GO_VERSION>-alpine + apk add gettext-envsubst
+        │                       → image scratch : envsubst + ses bibliothèques musl
+        ├──▶ docker/prometheus/Dockerfile     prom/prometheus:<PROMETHEUS_VERSION>
+        └──▶ docker/alertmanager/Dockerfile   prom/alertmanager:<ALERTMANAGER_VERSION>
+```
+
+1. L'image builder `envsubst` installe le paquet Alpine `gettext-envsubst` et ne garde
+   que le binaire et ses bibliothèques (image `scratch`).
+2. Les Dockerfiles Prometheus et Alertmanager copient ce contenu dans l'image officielle
+   (`COPY --from=envsubst`). Compose fournit l'image builder comme contexte de build
+   nommé (`additional_contexts: envsubst: service:envsubst`) ; le service `envsubst` est
+   dans le profil `build`, il est construit mais jamais lancé.
+3. À **chaque démarrage** du conteneur, l'`ENTRYPOINT` rend le `.tmpl` en `.yml` avec les
+   variables d'environnement puis lance le service.
+
+### Ajouter une variable dans un template
+
+1. L'écrire dans le template : `${MA_VARIABLE}`.
+2. La déclarer dans `environment:` du service concerné dans `compose.yml` :
+   `MA_VARIABLE: ${MA_VARIABLE:?à définir dans .env}`.
+3. L'ajouter dans `.env.example` (valeur `XXX`) et dans votre `.env`.
+
+Seules les variables listées dans `environment:` entrent dans le conteneur : le mot de
+passe Grafana, par exemple, n'est jamais visible par Prometheus.
+
+À savoir (envsubst GNU) :
+
+- une variable **non définie dans le conteneur est remplacée par une chaîne vide**, sans
+  erreur : c'est le `:?` de `compose.yml` qui garantit qu'elle est renseignée ;
+- seules les formes `$VAR` et `${VAR}` sont reconnues (pas de `${VAR:-défaut}`) ;
+- `$1`, `${1}`… ne sont pas des noms de variable : les `replacement: $1` des
+  `relabel_configs` restent intacts ;
+- les valeurs sont entourées de `'…'` dans les templates : elles ne doivent pas contenir d'apostrophe.
+
+### Appliquer une modification
+
+| Modification | Commande |
+|---|---|
+| `.env` | `docker compose up -d` (recrée les conteneurs concernés) |
+| `*.tmpl` | `docker compose restart prometheus alertmanager` (le template est re-rendu au démarrage) |
+| `prometheus/targets/*.json` | rien : Prometheus relit les fichiers automatiquement |
+| `prometheus/rules/*.rules.yml` | `docker compose restart prometheus` |
+| `docker/*/Dockerfile`, versions dans `.env` | `docker compose up -d --build` |
+
+Pour voir la configuration réellement rendue :
+
+```bash
+docker compose exec prometheus cat /etc/prometheus/prometheus.yml
+```
+
+## Targets
+
+Chaque job de `prometheus.yml.tmpl` lit ses cibles dans `prometheus/targets/<job>.json`
+(format [file_sd](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#file_sd_config)).
+Un fichier absent ne provoque pas d'erreur : le job n'a simplement aucune cible.
+
+```json
+[
+  {
+    "labels": { "env": "production" },
+    "targets": ["192.168.1.10:9100", "192.168.1.11:9100"]
+  }
+]
+```
+
+### Blackbox
+
+Le job `blackbox` sonde des URL ou des `hôte:port` via le blackbox exporter
+(modèle : `prometheus/targets/blackbox.json.example`). Le module utilisé est `http_2xx`
+par défaut ; un groupe de cibles peut en choisir un autre avec le label `__param_module` :
+
+```json
+[
+  { "targets": ["https://example.com/"] },
+  { "labels": { "__param_module": "tcp_connect" }, "targets": ["192.168.1.20:5432"] }
+]
+```
+
+Les modules disponibles sont définis dans `blackbox/blackbox.yml` (`http_2xx`, `tcp_connect`) ;
+pour en ajouter un, voir la [documentation blackbox](https://github.com/prometheus/blackbox_exporter/blob/master/CONFIGURATION.md)
+puis `docker compose restart blackbox`.
+
+### Ajouter un nouveau type d'exporter
+
+1. Ajouter un job dans `prometheus/prometheus.yml.tmpl` sur le modèle des autres
+   (`basic_auth` + `file_sd_configs` pointant sur `targets/<job>.json`).
+2. Créer `prometheus/targets/<job>.json` (et un `<job>.json.example` si le job est partagé).
+3. Ajouter ses règles dans `prometheus/rules/<job>.rules.yml`.
+4. `docker compose up -d`.
+
+## Rules
+
+Les fichiers `prometheus/rules/*.rules.yml` sont chargés automatiquement. Les règles d'un
+exporter sans cible ne déclenchent rien : elles peuvent rester en place.
