@@ -1,0 +1,11 @@
+---
+- name: Copier le compose node_exporter
+  ansible.builtin.copy:
+    src: compose.yml
+    dest: "{{ node_exporter_dir }}/"
+    mode: "0644"
+
+- name: Démarrer node_exporter
+  community.docker.docker_compose_v2:
+    project_src: "{{ node_exporter_dir }}"
+    state: present

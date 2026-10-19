@@ -1,0 +1,40 @@
+---
+- name: Créer le répertoire des targets
+  ansible.builtin.file:
+    path: "{{ monitoring_dir }}/prometheus/targets"
+    state: directory
+    mode: "0755"
+
+- name: Copier les fichiers de la stack
+  ansible.builtin.copy:
+    src: "{{ monitoring_repo_dir }}/{{ item }}"
+    dest: "{{ monitoring_dir }}/{{ item | dirname }}/"
+    mode: preserve
+  loop: "{{ monitoring_files }}"
+  register: monitoring_stack_files
+
+- name: Copier le .env
+  ansible.builtin.copy:
+    src: "{{ monitoring_env_file }}"
+    dest: "{{ monitoring_dir }}/.env"
+    mode: "0600"
+  register: monitoring_env
+
+- name: Générer les targets Prometheus
+  ansible.builtin.copy:
+    content: "{{ [{'targets': item.value}] | to_nice_json }}\n"
+    dest: "{{ monitoring_dir }}/prometheus/targets/{{ item.key }}.json"
+    mode: "0644"
+  loop: "{{ monitoring_prometheus_targets | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+# Les templates sont rendus au démarrage des conteneurs : toute modification
+# de fichier ou du .env impose de les recréer. Les targets, elles, sont relues à chaud.
+- name: Construire et démarrer la stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_dir }}"
+    build: always
+    recreate: "{{ 'always' if (monitoring_stack_files is changed or monitoring_env is changed) else 'auto' }}"
+    wait: true
+    state: present
