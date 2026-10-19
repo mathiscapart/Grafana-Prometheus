@@ -18,6 +18,7 @@ docker compose up -d --build
 | Règles d'alerte | `prometheus/rules/*.rules.yml` | oui |
 | Routage et receivers des alertes | `alertmanager/alertmanager.yml.tmpl` | oui |
 | Modules blackbox | `blackbox/blackbox.yml` | oui |
+| Grafana : réglages, datasources, dashboards | `grafana/` ([doc](grafana.md)) | oui |
 | Authentification / TLS des exporters | `web.yml` sur chaque hôte exporter | non (`exporter/web.yml.example`) |
 
 Le `.env` porte les valeurs qui changent d'un déploiement à l'autre (versions, secrets).
@@ -31,7 +32,8 @@ Les cibles et les règles restent dans des fichiers dédiés : plus lisibles et 
 | `PROMETHEUS_VERSION`, `ALERTMANAGER_VERSION`, `BLACKBOX_VERSION`, `GRAFANA_VERSION` | Tag Docker Hub de chaque image |
 | `GO_VERSION` | Tag de l'image `golang:<GO_VERSION>-alpine` qui compile envsubst |
 | `ENVSUBST_VERSION` | Tag de [gomodules.xyz/envsubst](https://github.com/gomodules/envsubst) (ex. `v0.2.0`) |
-| `GF_SECURITY_ADMIN_USER`, `GF_SECURITY_ADMIN_PASSWORD` | Compte admin Grafana |
+| `GF_SECURITY_ADMIN_USER`, `GF_SECURITY_ADMIN_PASSWORD` | Compte admin Grafana (créé au premier démarrage, [doc](grafana.md)) |
+| `GF_SERVER_ROOT_URL` | URL publique de Grafana |
 | `DISCORD_WEBHOOK_URL` | Webhook Discord des alertes ([doc](alertmanager-discord.md)) |
 | `EXPORTER_BASIC_AUTH_USERNAME`, `EXPORTER_BASIC_AUTH_PASSWORD` | Identifiants de scrape des exporters ([doc](securisation-exporters.md)) |
 

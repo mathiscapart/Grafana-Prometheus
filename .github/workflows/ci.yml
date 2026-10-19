@@ -76,6 +76,7 @@ jobs:
             echo "ENVSUBST_VERSION=$ENVSUBST_VERSION"
             echo "GF_SECURITY_ADMIN_USER=admin"
             echo "GF_SECURITY_ADMIN_PASSWORD=ci-grafana"
+            echo "GF_SERVER_ROOT_URL=http://localhost:3000"
             echo "DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/0/ci"
             echo "EXPORTER_BASIC_AUTH_USERNAME=prometheus"
             echo "EXPORTER_BASIC_AUTH_PASSWORD=ci-p@ss#word"
@@ -94,6 +95,13 @@ jobs:
         run: |
           docker compose exec -T prometheus promtool check config /etc/prometheus/prometheus.yml
           docker compose exec -T alertmanager amtool check-config /etc/alertmanager/alertmanager.yml
+
+      - name: Dashboards Grafana provisionnés
+        run: |
+          expected=$(( $(grep -cvE '^\s*(#|$)' grafana/dashboards.txt) + $(find grafana/dashboards -name '*.json' | wc -l) ))
+          actual=$(curl -fsu admin:ci-grafana 'http://localhost:3000/api/search?type=dash-db' | jq length)
+          echo "dashboards : $actual / $expected"
+          [ "$actual" -eq "$expected" ]
 
       - name: Logs
         if: failure()

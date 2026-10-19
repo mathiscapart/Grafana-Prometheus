@@ -22,6 +22,22 @@ scrape_configs:
       - targets:
           - localhost:9090
 
+  # Supervision de la stack elle-même
+  - job_name: "alertmanager"
+    static_configs:
+      - targets:
+          - alertmanager:9093
+
+  - job_name: "blackbox_exporter"
+    static_configs:
+      - targets:
+          - blackbox:9115
+
+  - job_name: "grafana"
+    static_configs:
+      - targets:
+          - grafana:3000
+
   - job_name: "node"
     basic_auth:
       username: '${EXPORTER_BASIC_AUTH_USERNAME}'

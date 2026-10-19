@@ -1,0 +1,8 @@
+# Dashboards grafana.com téléchargés au build de l'image Grafana (cf. doc/grafana.md).
+# <id>   <révision|latest>   <dossier Grafana>
+1860     45                  Infrastructure
+14057    1                   Services
+12708    1                   Services
+13659    1                   Monitoring
+3662     2                   Monitoring
+9578     4                   Monitoring

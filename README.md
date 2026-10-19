@@ -35,6 +35,7 @@ La documentation détaillée est dans le dossier [`doc/`](doc) :
 
 - [Configuration (.env, templates, targets, rules)](doc/configuration.md)
 - [Alertmanager → Discord](doc/alertmanager-discord.md)
+- [Grafana (dashboards par ID, configuration)](doc/grafana.md)
 - [Sécurisation des exporters (web.yml)](doc/securisation-exporters.md)
 - [Déploiement avec Ansible](doc/ansible.md)
 - [CI (lint, build, tests)](doc/ci.md)
