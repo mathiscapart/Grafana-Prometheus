@@ -15,6 +15,25 @@
   loop: "{{ monitoring_files }}"
   notify: Redémarrer la stack de monitoring
 
+# copy n'efface rien : une rule ou un dashboard retiré du repo resterait chargé sur le serveur
+- name: Lister les fichiers déployés dans les dossiers de la stack
+  ansible.builtin.find:
+    paths: "{{ monitoring_dir }}/{{ item }}"
+    recurse: true
+  loop: "{{ monitoring_files }}"
+  when: (monitoring_repo_dir ~ '/' ~ item) is directory
+  register: monitoring_deployed_files
+
+- name: Supprimer les fichiers retirés du repo
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ monitoring_deployed_files.results | selectattr('files', 'defined') | map(attribute='files') | flatten }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when: not (monitoring_repo_dir ~ (item.path | replace(monitoring_dir, '', 1))) is exists
+  notify: Redémarrer la stack de monitoring
+
 - name: Copier le .env
   ansible.builtin.copy:
     src: "{{ monitoring_env_file }}"

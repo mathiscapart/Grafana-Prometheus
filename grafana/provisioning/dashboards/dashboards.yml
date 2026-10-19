@@ -2,7 +2,7 @@ apiVersion: 1
 
 # Chaque sous-dossier de /etc/grafana/dashboards devient un dossier Grafana.
 # Les dashboards provisionnés sont gérés par le repo : non modifiables dans l'UI
-# (« Save as » pour expérimenter sur une copie), à changer dans le JSON ou dashboards.txt.
+# (« Save as » pour expérimenter sur une copie), à changer dans le JSON.
 providers:
   - name: dashboards
     type: file

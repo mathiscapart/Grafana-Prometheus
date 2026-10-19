@@ -17,4 +17,4 @@ all:
         192.168.1.10:
         192.168.1.11:
       vars:
-        node_exporter_version: XXX # tag de prom/node-exporter
+        node_exporter_version: XXX # tag de quay.io/prometheus/node-exporter

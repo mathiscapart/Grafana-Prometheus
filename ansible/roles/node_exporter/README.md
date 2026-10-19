@@ -9,7 +9,7 @@ Prérequis : Docker et le plugin Compose (rôle `docker`), collection `community
 
 | Variable | Défaut | Description |
 |---|---|---|
-| `node_exporter_version` | **obligatoire** | Tag de l'image `prom/node-exporter` |
+| `node_exporter_version` | **obligatoire** | Tag de l'image `quay.io/prometheus/node-exporter` |
 | `node_exporter_dir` | `/opt/node_exporter` | Répertoire du compose sur l'hôte |
 
 ## Exemple

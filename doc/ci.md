@@ -5,7 +5,7 @@ Workflow GitHub Actions : `.github/workflows/ci.yml`, sur chaque pull request et
 | Job | Étapes |
 |---|---|
 | `lint` | yamllint · hadolint (`docker/*/Dockerfile`) · shellcheck (`exporter/*.sh`, avec `common.sh`) · `promtool check rules` · `ansible-playbook --syntax-check` + ansible-lint |
-| `build-test` | `.env` de CI · `docker compose build` · démarrage (`up --wait`, healthchecks) · configurations rendues validées par `promtool check config` et `amtool check-config` |
+| `build-test` | `.env` de CI · `docker compose build` · démarrage (`up --wait`, healthchecks) · configurations rendues validées par `promtool check config` et `amtool check-config` · accès protégés (Prometheus en basic auth, Grafana → Prometheus, Alertmanager et Blackbox non exposés) · nombre de dashboards Grafana provisionnés |
 
 ## Versions
 

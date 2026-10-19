@@ -20,6 +20,7 @@ env:
   GRAFANA_VERSION: 13.2.4
   GO_VERSION: "1.27"
   ENVSUBST_VERSION: v0.2.0
+  BCRYPT_TOOL_VERSION: v1.1.11
 
 jobs:
   lint:
@@ -74,6 +75,9 @@ jobs:
             echo "GRAFANA_VERSION=$GRAFANA_VERSION"
             echo "GO_VERSION=$GO_VERSION"
             echo "ENVSUBST_VERSION=$ENVSUBST_VERSION"
+            echo "BCRYPT_TOOL_VERSION=$BCRYPT_TOOL_VERSION"
+            echo "PROMETHEUS_BASIC_AUTH_USERNAME=admin"
+            echo "PROMETHEUS_BASIC_AUTH_PASSWORD='ci-prom-p@ss\$word'"
             echo "GF_SECURITY_ADMIN_USER=admin"
             echo "GF_SECURITY_ADMIN_PASSWORD=ci-grafana"
             echo "GF_SERVER_ROOT_URL=http://localhost:3000"
@@ -101,6 +105,18 @@ jobs:
         run: |
           docker compose exec -T prometheus promtool check config /etc/prometheus/prometheus.yml
           docker compose exec -T alertmanager amtool check-config /etc/alertmanager/alertmanager.yml
+
+      - name: Accès protégés
+        run: |
+          # Prometheus : basic auth (mot de passe avec « $ », entre apostrophes dans le .env)
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:9090/-/ready)" = 401
+          # shellcheck disable=SC2016 # « $word » fait partie du mot de passe
+          curl -fsS -o /dev/null -u 'admin:ci-prom-p@ss$word' http://localhost:9090/-/ready
+          curl -fsS -u admin:ci-grafana http://localhost:3000/api/datasources/uid/prometheus/health
+          # Alertmanager et Blackbox : non publiés
+          for port in 9093 9115; do
+            if curl -s -o /dev/null --max-time 3 "http://localhost:$port/"; then echo "::error::port $port exposé"; exit 1; fi
+          done
 
       - name: Dashboards Grafana provisionnés
         run: |

@@ -18,7 +18,8 @@ require_root
 command -v mysql >/dev/null || die "client mysql introuvable : lancer ce script sur le serveur MySQL/MariaDB"
 [ -n "$MYSQL_EXPORTER_PASSWORD" ] || { read -rsp "Mot de passe MySQL de l'exporter : " MYSQL_EXPORTER_PASSWORD || true; echo; }
 [ -n "$MYSQL_EXPORTER_PASSWORD" ] || die "MYSQL_EXPORTER_PASSWORD requis"
-[[ "$MYSQL_EXPORTER_PASSWORD" != *[\'\\]* ]] || die "MYSQL_EXPORTER_PASSWORD ne doit contenir ni apostrophe ni antislash"
+# ' et \ casseraient la requête SQL ; # et ; sont lus comme un commentaire dans le .cnf de mysqld_exporter
+[[ "$MYSQL_EXPORTER_PASSWORD" != *[\'\\\#\;]* ]] || die "MYSQL_EXPORTER_PASSWORD ne doit contenir ni ' ni \\ ni # ni ;"
 
 install_prerequisites
 create_user

@@ -21,7 +21,7 @@ Nous devons monitorer l'infrastructure Dundermifflin, pour ce faire nous utiliso
   les protègent par basic auth, avec les identifiants du ``.env``
   (cf. [doc/securisation-exporters.md](doc/securisation-exporters.md)) :
 ````bash
-sudo NODE_BASIC_AUTH_USERNAME=prometheus NODE_BASIC_AUTH_PASSWORD='<mot de passe du .env>' VERSION=X.Y.Z ./exporter/node_exporter.sh
+sudo NODE_BASIC_AUTH_USERNAME=prometheus VERSION=X.Y.Z ./exporter/node_exporter.sh   # mot de passe demandé
 ````
 
 La documentation détaillée est dans le dossier [`doc/`](doc) :
@@ -31,7 +31,7 @@ La documentation détaillée est dans le dossier [`doc/`](doc) :
 - [Grafana (configuration, import de dashboards)](doc/grafana.md)
 - [Installation et sécurisation des exporters](doc/securisation-exporters.md)
 - [Déploiement avec Ansible](doc/ansible.md)
-- [CI (lint, build, tests)](doc/ci.md)
+- [CI (lint, build, vérifications)](doc/ci.md)
 
 ## 🧱 Lancé le projet
 
@@ -39,7 +39,7 @@ L'ensemble des services est déployé via Docker Compose, lancé cette commande 
 ```bash
 docker compose up -d --build
 ``` 
-Les métriques sont accessibles via Prometheus, et visualisées avec Grafana sur votre pc en allant sur `localhost:3000` pour Grafana et `localhost:9090` pour Prometheus.
+Grafana est accessible sur le port `3000` (compte admin du `.env`) et Prometheus sur le port `9090` (basic auth `PROMETHEUS_BASIC_AUTH_*` du `.env`). Alertmanager et Blackbox ne sont pas exposés (cf. [doc/configuration.md](doc/configuration.md#accès-aux-services)).
     
 ## Schéma d'infrastructure avec monitoring
 ![img.png](img/schema.drawio.png)

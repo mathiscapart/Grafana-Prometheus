@@ -6,7 +6,7 @@ argument_specs:
       node_exporter_version:
         type: str
         required: true
-        description: Tag de l'image prom/node-exporter (ex. vX.Y.Z).
+        description: Tag de l'image quay.io/prometheus/node-exporter (ex. vX.Y.Z).
       node_exporter_dir:
         type: str
         description: Répertoire du compose sur l'hôte.

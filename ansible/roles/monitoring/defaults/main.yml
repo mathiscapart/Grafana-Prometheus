@@ -9,6 +9,7 @@ monitoring_files:
   - compose.yml
   - docker
   - prometheus/prometheus.yml.tmpl
+  - prometheus/web.yml.tmpl
   - prometheus/rules
   - alertmanager
   - blackbox

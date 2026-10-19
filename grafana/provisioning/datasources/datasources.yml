@@ -8,6 +8,11 @@ datasources:
     url: http://prometheus:9090
     isDefault: true
     editable: false
+    # Prometheus est protégé par basic auth (variables d'environnement du conteneur Grafana)
+    basicAuth: true
+    basicAuthUser: $PROMETHEUS_BASIC_AUTH_USERNAME
+    secureJsonData:
+      basicAuthPassword: $PROMETHEUS_BASIC_AUTH_PASSWORD
     jsonData:
       httpMethod: POST
       prometheusType: Prometheus

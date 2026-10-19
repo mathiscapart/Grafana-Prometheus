@@ -33,13 +33,12 @@ Un script par exporter dans `exporter/`, tous sur le même modèle (`exporter/co
 Copier le dossier `exporter/` sur le serveur, puis :
 
 ```bash
-sudo NODE_BASIC_AUTH_USERNAME=prometheus \
-     NODE_BASIC_AUTH_PASSWORD='<NODE_BASIC_AUTH_PASSWORD du .env>' \
-     VERSION=X.Y.Z ./node_exporter.sh
+sudo NODE_BASIC_AUTH_USERNAME=prometheus VERSION=X.Y.Z ./node_exporter.sh
 ```
 
-Les identifiants sont **ceux du `.env` de la stack** pour cet exporter. S'ils ne sont pas
-passés en variables, le script les demande. Relancer le script conserve le `web.yml`
+Les identifiants sont **ceux du `.env` de la stack** pour cet exporter. Le mot de passe
+est demandé en saisie masquée : ne pas le passer en variable sur la ligne de commande,
+il resterait dans l'historique du shell. Relancer le script conserve le `web.yml`
 existant ; `WEB_CONFIG_RESET=1` le régénère (par exemple après un changement de mot de
 passe dans le `.env`).
 
@@ -50,7 +49,7 @@ Relancer un script met à jour l'exporter (nouvelle `VERSION`) sans autre effet.
 | `node_exporter.sh` | `node_exporter` | 9100 | `NODE_BASIC_AUTH_*` | — |
 | `nginx_exporter.sh` | `nginx_exporter` | 9113 | `NGINX_BASIC_AUTH_*` | `NGINX_SCRAPE_URI` (`http://127.0.0.1:8080/nginx_status`, stub_status nginx) |
 | `apache_exporter.sh` | `apache_exporter` | 9117 | `APACHE_BASIC_AUTH_*` | `APACHE_SCRAPE_URI` (`http://localhost/server-status?auto`, mod_status) |
-| `mysql_exporter.sh` | `mysqld-exporter` | 9104 | `MYSQL_BASIC_AUTH_*` | `MYSQL_EXPORTER_PASSWORD` (demandé), `MYSQL_EXPORTER_USER` (`exporter`), `MYSQL_ROOT_PASSWORD` |
+| `mysql_exporter.sh` | `mysqld-exporter` | 9104 | `MYSQL_BASIC_AUTH_*` | `MYSQL_EXPORTER_PASSWORD` (demandé ; sans `'`, `\`, `#` ni `;`), `MYSQL_EXPORTER_USER` (`exporter`), `MYSQL_ROOT_PASSWORD` |
 | `keepalived_exporter.sh` | `keepalived_exporter` | 9165 | aucune (non supportée) | `KEEPALIVED_PID_PATH` (`/var/run/keepalived.pid`) |
 
 Communes à tous : `VERSION` (obligatoire, sans le `v`, tag de release GitHub de l'exporter :

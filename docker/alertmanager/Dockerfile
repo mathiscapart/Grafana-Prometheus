@@ -4,8 +4,8 @@
 ARG ALERTMANAGER_VERSION
 FROM prom/alertmanager:${ALERTMANAGER_VERSION}
 
-# « envsubst » : contexte de build fourni par compose (image docker/envsubst)
-COPY --from=envsubst / /
+# « tools » : contexte de build fourni par compose (image docker/tools)
+COPY --from=tools /bin/envsubst /bin/envsubst
 
 ENTRYPOINT ["/bin/sh", "-c", "envsubst < /etc/alertmanager/alertmanager.yml.tmpl > /etc/alertmanager/alertmanager.yml && exec /bin/alertmanager \"$@\"", "--"]
 CMD ["--config.file=/etc/alertmanager/alertmanager.yml", "--storage.path=/alertmanager"]

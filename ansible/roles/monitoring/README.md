@@ -22,6 +22,8 @@ peut être géré à la main sur le serveur.
 
 - Fichiers modifiés (templates, rules, configs) → la stack est redémarrée (handler),
   ce qui re-rend les templates.
+- Fichiers retirés du repo (ex. une rule supprimée) → supprimés du serveur, puis redémarrage.
+  `prometheus/targets/` n'est pas concerné : les targets gérées à la main sont conservées.
 - `.env` modifié → compose recrée les conteneurs concernés.
 - Targets modifiées → relues à chaud par Prometheus.
 
