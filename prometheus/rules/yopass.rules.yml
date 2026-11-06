@@ -1,0 +1,46 @@
+groups:
+  - name: yopass
+    rules:
+      - alert: YopassDown
+        expr: up{job="yopass"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Yopass injoignable sur {{ $labels.instance }}"
+          description: "Prometheus n'arrive plus à scraper yopass depuis 2 minutes."
+      - alert: YopassInjoignablePublic
+        expr: probe_success{job="blackbox",service="yopass"} == 0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Yopass injoignable depuis Internet"
+          description: "La sonde sur {{ $labels.instance }} échoue depuis 3 minutes (tunnel, Cloudflare ou DNS)."
+      - alert: YopassErreurs5xx
+        expr: |
+          sum(rate(yopass_http_requests_total{job="yopass",code=~"5.."}[5m]))
+            / sum(rate(yopass_http_requests_total{job="yopass"}[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Plus de 5 % d'erreurs 5xx sur yopass"
+          description: "Taux actuel : {{ $value | humanizePercentage }}."
+      - alert: YopassLent
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(yopass_http_request_duration_seconds_bucket{job="yopass"}[5m]))) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latence p95 de yopass au-dessus de 1 s"
+          description: "p95 actuel : {{ $value | humanizeDuration }}."
+      - alert: YopassRedemarre
+        expr: changes(process_start_time_seconds{job="yopass"}[15m]) > 0
+        labels:
+          severity: info
+        annotations:
+          summary: "Yopass a redémarré sur {{ $labels.instance }}"
+          description: "Le processus a redémarré dans les 15 dernières minutes."

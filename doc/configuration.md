@@ -172,6 +172,7 @@ exporter sans cible ne déclenchent rien : elles peuvent rester en place.
 | `mysql.rules.yml` | MySQL down, connexions > 80 % de `max_connections`, réplication arrêtée (threads IO/SQL), retard de réplication > 30 s, redémarrage |
 | `nginx.rules.yml`, `apache.rules.yml` | Serveur web down |
 | `keepalived.rules.yml` | Keepalived down, bascule MASTER/BACKUP |
+| `yopass.rules.yml` | Yopass non scrapé, injoignable depuis Internet (sonde blackbox `service="yopass"`), > 5 % d'erreurs 5xx, latence p95 > 1 s, redémarrage |
 
 Sévérités : `critical` (action immédiate), `warning` (à traiter), `info` (pour information,
 ex. redémarrage). Toutes partent sur Discord ; le routage par sévérité se règle dans

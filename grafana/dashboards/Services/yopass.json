@@ -1,0 +1,79 @@
+{
+  "title": "Yopass",
+  "uid": "yopass",
+  "tags": ["yopass"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
+  "schemaVersion": 39,
+  "templating": {
+    "list": [
+      { "name": "datasource", "label": "Prometheus", "type": "datasource", "query": "prometheus" }
+    ]
+  },
+  "panels": [
+    {
+      "type": "stat", "title": "Disponibilité",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "refId": "A", "expr": "up{job=\"yopass\"}" }],
+      "fieldConfig": { "defaults": {
+        "mappings": [{ "type": "value", "options": {
+          "0": { "text": "DOWN", "color": "red" },
+          "1": { "text": "UP", "color": "green" } } }],
+        "color": { "mode": "thresholds" },
+        "thresholds": { "mode": "absolute", "steps": [
+          { "color": "red", "value": null }, { "color": "green", "value": 1 } ] } } },
+      "options": { "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "type": "stat", "title": "Uptime",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "refId": "A", "expr": "time() - process_start_time_seconds{job=\"yopass\"}" }],
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "type": "timeseries", "title": "Requêtes par seconde, par code HTTP",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "refId": "A", "legendFormat": "{{code}}",
+        "expr": "sum by (code) (rate(yopass_http_requests_total{job=\"yopass\"}[5m]))" }],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "type": "timeseries", "title": "Taux d'erreurs 5xx",
+      "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "refId": "A", "legendFormat": "5xx",
+        "expr": "sum(rate(yopass_http_requests_total{job=\"yopass\",code=~\"5..\"}[5m])) / sum(rate(yopass_http_requests_total{job=\"yopass\"}[5m]))" }],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0 } }
+    },
+    {
+      "type": "timeseries", "title": "Latence",
+      "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "refId": "A", "legendFormat": "p50", "expr": "histogram_quantile(0.50, sum by (le) (rate(yopass_http_request_duration_seconds_bucket{job=\"yopass\"}[5m])))" },
+        { "refId": "B", "legendFormat": "p95", "expr": "histogram_quantile(0.95, sum by (le) (rate(yopass_http_request_duration_seconds_bucket{job=\"yopass\"}[5m])))" },
+        { "refId": "C", "legendFormat": "p99", "expr": "histogram_quantile(0.99, sum by (le) (rate(yopass_http_request_duration_seconds_bucket{job=\"yopass\"}[5m])))" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "type": "timeseries", "title": "Mémoire (RSS)",
+      "gridPos": { "x": 0, "y": 14, "w": 12, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "refId": "A", "legendFormat": "RSS", "expr": "process_resident_memory_bytes{job=\"yopass\"}" }],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "type": "timeseries", "title": "CPU",
+      "gridPos": { "x": 12, "y": 14, "w": 12, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "refId": "A", "legendFormat": "CPU", "expr": "rate(process_cpu_seconds_total{job=\"yopass\"}[5m])" }],
+      "fieldConfig": { "defaults": { "unit": "percentunit" } }
+    }
+  ]
+}

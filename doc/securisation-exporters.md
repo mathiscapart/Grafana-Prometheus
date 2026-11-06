@@ -74,6 +74,17 @@ tourne aussi en `root`, car il doit signaler keepalived pour obtenir ses statist
 c'est un problème : restreindre le port 9165 au serveur Prometheus (pare-feu) ou le
 placer derrière un reverse proxy avec authentification.
 
+### ⚠️ Yopass
+
+Yopass expose ses métriques nativement (`yopass-server --metrics-port <port>`, ou
+`METRICS_PORT`), sur un port séparé du port public, mais **sans authentification**
+([doc](https://github.com/jhaals/yopass/blob/master/docs/metrics.md)) : le job `yopass`
+n'a pas de `basic_auth`. Ne pas rendre ce port joignable depuis Internet ; si besoin,
+le restreindre au serveur Prometheus (pare-feu).
+
+L'alerte `YopassInjoignablePublic` lit la sonde blackbox portant le label
+`service: yopass` dans `targets/blackbox.json`.
+
 ## Vérifier
 
 ```bash
