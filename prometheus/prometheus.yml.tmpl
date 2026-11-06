@@ -79,6 +79,12 @@ scrape_configs:
       - files:
           - targets/apache.json
 
+  # yopass ne gère pas l'authentification sur /metrics (cf. doc/securisation-exporters.md)
+  - job_name: "yopass"
+    file_sd_configs:
+      - files:
+          - targets/yopass.json
+
   # Les cibles sont des URL/hôtes à sonder, le scrape passe par le blackbox exporter.
   # Module par défaut : http_2xx ; surchargeable par groupe de cibles avec le
   # label "__param_module" (cf. targets/blackbox.json.example et blackbox/blackbox.yml).
